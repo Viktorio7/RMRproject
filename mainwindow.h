@@ -30,8 +30,10 @@ public:
     void robotprocess();
     void laserprocess();
     void processThisLidar(LaserMeasurement &laserData);
-
     void processThisRobot();
+
+    void odometry();
+
     pthread_t robotthreadHandle; // handle na vlakno
     int robotthreadID;  // id vlakna
     static void *robotUDPVlakno(void *param)
@@ -85,7 +87,7 @@ private:
     int datacounter;
     int encoderStartLeft,encoderEndLeft,encoderStartRight,encoderEndRight;
     int encoderOldL, encoderOldR;
-    long overflowL,overflowR;
+    long overflowL,overflowR, encoderDeltaL, encoderDeltaR;
     double FiOld;
     bool finished;
     double destX, destY;

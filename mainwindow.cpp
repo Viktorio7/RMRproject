@@ -59,8 +59,8 @@ void MainWindow::paintEvent(QPaintEvent *event)
             //do vyhradeneho stvorca aspon castou merania.. ale nieje to pekne, krajsie by bolo
             //keby ste nastavovali mierku tak,aby bolo v okne zobrazene cele meranie (treba najst min a max pre x a y suradnicu a podla toho to prenasobit)
             int dist=copyOfLaserData.Data[k].scanDistance/15;//delim 15 aby som sa aspon niektorymi udajmi zmestil do okna.
-            int xp=rect.width()-(rect.width()/2+dist*2*sin((360.0-copyOfLaserData.Data[k].scanAngle)*3.14159/180.0))+rect.topLeft().x();
-            int yp=rect.height()-(rect.height()/2+dist*2*cos((360.0-copyOfLaserData.Data[k].scanAngle)*3.14159/180.0))+rect.topLeft().y();
+            int xp=rect.width()-(rect.width()/2+dist*2*sin((357.0+copyOfLaserData.Data[k].scanAngle)*3.14159/180.0))+rect.topLeft().x();
+            int yp=rect.height()-(rect.height()/2+dist*2*cos((357.0+copyOfLaserData.Data[k].scanAngle)*3.14159/180.0))+rect.topLeft().y();
             if(rect.contains(xp,yp))
                 painter.drawEllipse(QPoint(xp, yp),2,2);//vykreslime kruh s polomerom 2px
         }
@@ -68,26 +68,8 @@ void MainWindow::paintEvent(QPaintEvent *event)
     }
 }
 
-
-void MainWindow::processThisRobot()
+void MainWindow::odometry()
 {
-    /*
-    ///tu mozete robit s datami z robota
-    /// ale nic vypoctovo narocne - to iste vlakno ktore cita data z robota
-    ///teraz tu len vypisujeme data z robota(kazdy 5ty krat. ale mozete skusit aj castejsie). vyratajte si polohu. a vypiste spravnu
-    if(datacounter%5==0)
-    {
-        ///ak nastavite hodnoty priamo do prvkov okna,ako je to na tychto zakomentovanych riadkoch tak sa moze stat ze vam program padne
-    //ui->lineEdit_2->setText(QString::number(robotdata.EncoderRight));
-    //ui->lineEdit_3->setText(QString::number(robotdata.EncoderLeft));
-    //ui->lineEdit_4->setText(QString::number(robotdata.GyroAngle));
-        /// lepsi pristup je nastavit len nejaku premennu, a poslat signal oknu na prekreslenie
-        /// okno pocuva vo svojom slote a vasu premennu nastavi tak ako chcete
-        emit uiValuesChanged(15,rand()%100,robotdata.EncoderLeft);
-        ///toto neodporucam na nejake komplikovane struktury. robit to kopiu dat. radsej vtedy posielajte
-        /// prazdny signal a slot bude vykreslovat strukturu (vtedy ju musite mat samozrejme ako member premmennu v mainwindow.ak u niekoho najdem globalnu premennu,tak bude cistit bludisko zubnou kefkou.. kefku dodam)
-        /// vtedy ale odporucam pouzit mutex, aby sa vam nestalo ze budete pocas vypisovania prepisovat niekde inde
-    */
     if (counter == 0)
     {
 
@@ -107,7 +89,24 @@ void MainWindow::processThisRobot()
         overflowR=0;
     }
     counter++;
-/*
+
+    encoderDeltaR=robotdata.EncoderRight-encoderOldR;
+    encoderDeltaL=robotdata.EncoderLeft-encoderOldL;
+
+    if(encoderDeltaR<-65000){
+        encoderDeltaR = 65536 - encoderOldR + robotdata.EncoderRight;
+    }
+    else if(encoderDeltaR>65000){
+        encoderDeltaR = robotdata.EncoderRight - 65536 -encoderOldR;
+    }
+
+    if(encoderDeltaL<-65000){
+        encoderDeltaL = 65536 - encoderOldL + robotdata.EncoderLeft;
+    }
+    else if(encoderDeltaL>65000){
+        encoderDeltaL = robotdata.EncoderLeft - 65536 -encoderOldL;
+    }
+    /*
     if (robotdata.EncoderRight - encoderOldR >= -60000)
     {
         overflowR = -60000;
@@ -126,9 +125,11 @@ void MainWindow::processThisRobot()
     {
         overflowL = 60000;
     }
-*/
+
     distRight = CKobuki::getTickToMeter() * (robotdata.EncoderRight + overflowR - encoderOldR);
-    distLeft  = CKobuki::getTickToMeter() * (robotdata.EncoderLeft  + overflowL - encoderOldL);
+    distLeft  = CKobuki::getTickToMeter() * (robotdata.EncoderLeft  + overflowL - encoderOldL);*/
+    distRight = CKobuki::getTickToMeter() * (encoderDeltaR);
+    distLeft  = CKobuki::getTickToMeter() * (encoderDeltaL);
 
     encoderOldR = robotdata.EncoderRight;
     encoderOldL = robotdata.EncoderLeft;
@@ -158,7 +159,29 @@ void MainWindow::processThisRobot()
     XOld = X;
     YOld = Y;
     FiOld = Fi;
-    if(counter%1==0) emit uiValuesChanged(X,Y,(Fi*180)/M_PI);
+}
+
+void MainWindow::processThisRobot()
+{
+    /*
+    ///tu mozete robit s datami z robota
+    /// ale nic vypoctovo narocne - to iste vlakno ktore cita data z robota
+    ///teraz tu len vypisujeme data z robota(kazdy 5ty krat. ale mozete skusit aj castejsie). vyratajte si polohu. a vypiste spravnu
+    if(datacounter%5==0)
+    {
+        ///ak nastavite hodnoty priamo do prvkov okna,ako je to na tychto zakomentovanych riadkoch tak sa moze stat ze vam program padne
+    //ui->lineEdit_2->setText(QString::number(robotdata.EncoderRight));
+    //ui->lineEdit_3->setText(QString::number(robotdata.EncoderLeft));
+    //ui->lineEdit_4->setText(QString::number(robotdata.GyroAngle));
+        /// lepsi pristup je nastavit len nejaku premennu, a poslat signal oknu na prekreslenie
+        /// okno pocuva vo svojom slote a vasu premennu nastavi tak ako chcete
+        emit uiValuesChanged(15,rand()%100,robotdata.EncoderLeft);
+        ///toto neodporucam na nejake komplikovane struktury. robit to kopiu dat. radsej vtedy posielajte
+        /// prazdny signal a slot bude vykreslovat strukturu (vtedy ju musite mat samozrejme ako member premmennu v mainwindow.ak u niekoho najdem globalnu premennu,tak bude cistit bludisko zubnou kefkou.. kefku dodam)
+        /// vtedy ale odporucam pouzit mutex, aby sa vam nestalo ze budete pocas vypisovania prepisovat niekde inde
+    */
+    odometry();
+    if(counter%1==0) emit uiValuesChanged(copyOfLaserData.numberOfScans,Y,(Fi*180)/M_PI);
 }
 
 void MainWindow::processThisLidar(LaserMeasurement &laserData)
