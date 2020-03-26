@@ -158,7 +158,16 @@ void MainWindow::odometry()
 
     XOld = X;
     YOld = Y;
-    FiOld = Fi;
+    //FiOld = Fi;
+    if(Fi<-M_PI){
+        FiOld=M_PI;
+    }
+    else if(Fi>M_PI){
+        FiOld=-M_PI;
+    }
+    else{
+        FiOld=Fi;
+    }
 }
 
 void MainWindow::processThisRobot()
@@ -181,7 +190,7 @@ void MainWindow::processThisRobot()
         /// vtedy ale odporucam pouzit mutex, aby sa vam nestalo ze budete pocas vypisovania prepisovat niekde inde
     */
     odometry();
-    if(counter%1==0) emit uiValuesChanged(copyOfLaserData.numberOfScans,Y,(Fi*180)/M_PI);
+    if(counter%5==0) emit uiValuesChanged(round(X*1000)/1000,round(Y*1000)/1000,round(((Fi*180)/M_PI)*100)/100);
 }
 
 void MainWindow::processThisLidar(LaserMeasurement &laserData)
