@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QPainter>
+#include <unistd.h>
 
 using namespace std;
 ///TOTO JE DEMO PROGRAM... NEPREPISUJ NIC,ALE SKOPIRUJ SI MA NIEKAM DO INEHO FOLDERA
@@ -16,11 +17,22 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ///tu je napevno nastavena ip. treba zmenit na to co ste si zadali do text boxu alebo nejaku inu pevnu. co bude spravna
-    //ipaddress="192.168.1.10";
     ipaddress="127.0.0.1";
     ui->setupUi(this);
+    finished=true;
+    rotationFinished=false;
     counter=0;
     datacounter=0;
+
+    previousErrorFi=0;
+    minOutputFi=-2*M_PI;
+    maxOutputFi=2*M_PI;
+    rangeFi=0.3490658504/2;
+
+    previousErrorDist=0;
+    minOutputDist=-500;
+    maxOutputDist=500;
+    rangeDist=0.5;
 }
 
 MainWindow::~MainWindow()
@@ -190,7 +202,63 @@ void MainWindow::processThisRobot()
         /// vtedy ale odporucam pouzit mutex, aby sa vam nestalo ze budete pocas vypisovania prepisovat niekde inde
     */
     odometry();
-    if(counter%5==0) emit uiValuesChanged(round(X*1000)/1000,round(Y*1000)/1000,round(((Fi*180)/M_PI)*100)/100);
+    if(counter%5==0) emit uiValuesChanged(/*round(X*1000)/1000,round(Y*1000)/1000*/newErrorFi,newErrorDist,round(((Fi*180)/M_PI)*100)/100);
+    if(!finished){
+        vectX=destX-X;
+        vectY=destY-Y;
+        newErrorDist=sqrt(vectX*vectX+vectY*vectY);
+        if(newErrorDist>=-rangeDist&&newErrorDist<=rangeDist){
+            std::vector<unsigned char> mess=robot.setTranslationSpeed(0);
+            if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1){}
+            finished=true;
+        }
+        newErrorFi=(atan2(vectY,vectX)-Fi)-Fi;
+        while(newErrorFi>2*M_PI||newErrorFi<-2*M_PI){
+            if(newErrorFi>0){
+                newErrorFi-=2*M_PI;
+            }
+            if(newErrorFi<0){
+                newErrorFi+=2*M_PI;
+            }
+        }
+        outputFi=1*newErrorFi;
+        if(newErrorFi>=-rangeFi&&newErrorFi<=rangeFi){
+            std::vector<unsigned char> mess=robot.setRotationSpeed(0);
+            if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1){}
+            rotationFinished=true;
+        }
+        else{
+            if(outputFi<=minOutputFi){
+                outputFi=minOutputFi;
+            }
+            if(outputFi>=maxOutputFi){
+                outputFi=maxOutputFi;
+            }
+            std::vector<unsigned char> mess=robot.setRotationSpeed(outputFi);
+            if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1){}
+            rotationFinished=false;
+        }
+        if(rotationFinished){
+            outputDist=1000*ceil(newErrorDist);
+            //if((X<=(-rangeDist-X) && X>=(rangeDist-X) ) && (Y<=(-rangeDist-Y) && Y>=(rangeDist-Y) ))
+            if(newErrorDist>=-rangeDist&&newErrorDist<=rangeDist){
+                std::vector<unsigned char> mess=robot.setTranslationSpeed(0);
+                if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1){}
+                finished=true;
+            }
+            else{
+                if(outputDist<=minOutputDist){
+                    outputDist=minOutputDist;
+                }
+                if(outputDist>=maxOutputDist){
+                    outputDist=maxOutputDist;
+                }
+                std::vector<unsigned char> mess=robot.setTranslationSpeed(outputDist);
+                if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1){}
+            }
+        }
+        usleep(50000);
+    }
 }
 
 void MainWindow::processThisLidar(LaserMeasurement &laserData)
@@ -225,11 +293,19 @@ void MainWindow::on_pushButton_9_clicked() //start button
     connect(this,SIGNAL(uiValuesChanged(double,double,double)),this,SLOT(setUiValues(double,double,double)));
 }
 
-void MainWindow::on_pushButton_10_clicked(){
-    bool ok=false;
+void MainWindow::on_pushButton_10_clicked() // GoTo button
+{
+    /*bool ok=false;
     destX= ui->lineEdit_5->text().toDouble(&ok);
     destY= ui->lineEdit_6->text().toDouble(&ok);
-    finished=false;
+    finished=false;*/
+    if((!ui->lineEdit_5->text().isEmpty())&&(!ui->lineEdit_6->text().isEmpty())){
+        QString SetX=ui->lineEdit_5->text();
+        QString SetY=ui->lineEdit_6->text();
+        destX=SetX.toDouble();
+        destY=SetY.toDouble();
+        finished=false;
+    }
 }
 
 void MainWindow::on_pushButton_2_clicked() //forward
@@ -275,6 +351,7 @@ void MainWindow::on_pushButton_5_clicked()//right
 
 void MainWindow::on_pushButton_4_clicked() //stop
 {
+    finished=true;
     std::vector<unsigned char> mess=robot.setTranslationSpeed(0);
     if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1)
     {

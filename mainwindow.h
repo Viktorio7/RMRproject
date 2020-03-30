@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include<string>
-#include <QMainWindow>
+#include<QMainWindow>
 #include<QMutex>
 #include<iostream>
 #include<arpa/inet.h>
@@ -89,11 +89,19 @@ private:
     int encoderOldL, encoderOldR;
     long overflowL,overflowR, encoderDeltaL, encoderDeltaR;
     double FiOld;
-    bool finished;
+    bool finished,rotationFinished;;
     double destX, destY;
     long double distLeft, distRight;
     double X,Y,Fi,XOld,YOld,da;
     int counter;
+
+    double vectX,vectY;
+    double previousErrorFi,newErrorFi,rangeFi;
+    double minOutputFi,outputFi,maxOutputFi;
+
+    double previousErrorDist,newErrorDist,rangeDist;
+    int minOutputDist,outputDist,maxOutputDist;
+
 public slots:
     void setUiValues(double robotX,double robotY,double robotFi);
 signals:
