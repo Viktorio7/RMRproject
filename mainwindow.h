@@ -33,6 +33,8 @@ public:
     void processThisRobot();
 
     void odometry();
+    double degToRad(double);
+    double radToDeg(double);
 
     pthread_t robotthreadHandle; // handle na vlakno
     int robotthreadID;  // id vlakna
@@ -93,7 +95,7 @@ private:
     double destX, destY;
     long double distLeft, distRight;
     double X,Y,Fi,XOld,YOld,da;
-    int counter;
+    long counter;
 
     double vectX,vectY;
     double previousErrorFi,newErrorFi,rangeFi;

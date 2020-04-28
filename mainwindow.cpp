@@ -24,20 +24,31 @@ MainWindow::MainWindow(QWidget *parent) :
     counter=0;
     datacounter=0;
 
+    newErrorFi=0;
     previousErrorFi=0;
-    minOutputFi=-2*M_PI;
-    maxOutputFi=2*M_PI;
-    rangeFi=0.3490658504/2;
+    minOutputFi=-M_PI;
+    maxOutputFi=M_PI;
+    //rangeFi=0.3490658504/2;
+    rangeFi=degToRad(5);
 
+    newErrorDist=0;
     previousErrorDist=0;
-    minOutputDist=-500;
-    maxOutputDist=500;
-    rangeDist=0.5;
+    minOutputDist=-300;
+    maxOutputDist=300;
+    rangeDist=0.325;
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+double MainWindow::degToRad(double deg){
+    return deg*M_PI/180;
+}
+
+double MainWindow::radToDeg(double rad){
+    return rad*180/M_PI;
 }
 
 void MainWindow::paintEvent(QPaintEvent *event)
@@ -202,62 +213,61 @@ void MainWindow::processThisRobot()
         /// vtedy ale odporucam pouzit mutex, aby sa vam nestalo ze budete pocas vypisovania prepisovat niekde inde
     */
     odometry();
-    if(counter%5==0) emit uiValuesChanged(/*round(X*1000)/1000,round(Y*1000)/1000*/newErrorFi,newErrorDist,round(((Fi*180)/M_PI)*100)/100);
-    if(!finished){
-        vectX=destX-X;
-        vectY=destY-Y;
-        newErrorDist=sqrt(vectX*vectX+vectY*vectY);
-        if(newErrorDist>=-rangeDist&&newErrorDist<=rangeDist){
-            std::vector<unsigned char> mess=robot.setTranslationSpeed(0);
-            if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1){}
-            finished=true;
-        }
-        newErrorFi=(atan2(vectY,vectX)-Fi)-Fi;
-        while(newErrorFi>2*M_PI||newErrorFi<-2*M_PI){
-            if(newErrorFi>0){
-                newErrorFi-=2*M_PI;
-            }
-            if(newErrorFi<0){
-                newErrorFi+=2*M_PI;
-            }
-        }
-        outputFi=1*newErrorFi;
-        if(newErrorFi>=-rangeFi&&newErrorFi<=rangeFi){
-            std::vector<unsigned char> mess=robot.setRotationSpeed(0);
-            if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1){}
-            rotationFinished=true;
-        }
-        else{
-            if(outputFi<=minOutputFi){
-                outputFi=minOutputFi;
-            }
-            if(outputFi>=maxOutputFi){
-                outputFi=maxOutputFi;
-            }
-            std::vector<unsigned char> mess=robot.setRotationSpeed(outputFi);
-            if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1){}
-            rotationFinished=false;
-        }
-        if(rotationFinished){
-            outputDist=1000*ceil(newErrorDist);
-            //if((X<=(-rangeDist-X) && X>=(rangeDist-X) ) && (Y<=(-rangeDist-Y) && Y>=(rangeDist-Y) ))
+    if(counter%5==0) emit uiValuesChanged(round(X*1000)/1000,round(Y*1000)/1000,round((radToDeg(Fi)*100)/100));
+    if(counter%10==0){
+        if(!finished){
+            vectX=destX-X;
+            vectY=destY-Y;
+
+            newErrorDist=sqrt(vectX*vectX+vectY*vectY);
             if(newErrorDist>=-rangeDist&&newErrorDist<=rangeDist){
                 std::vector<unsigned char> mess=robot.setTranslationSpeed(0);
                 if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1){}
                 finished=true;
             }
-            else{
-                if(outputDist<=minOutputDist){
-                    outputDist=minOutputDist;
+
+            newErrorFi=(atan2(vectY,vectX)-Fi);
+            outputFi=10*newErrorFi;
+            if(!finished){
+                if(newErrorFi>=-rangeFi&&newErrorFi<=rangeFi){
+                    std::vector<unsigned char> mess=robot.setRotationSpeed(0);
+                    if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1){}
+                    rotationFinished=true;
                 }
-                if(outputDist>=maxOutputDist){
-                    outputDist=maxOutputDist;
+                else{
+                    if(outputFi<=minOutputFi){
+                        outputFi=minOutputFi;
+                    }
+                    if(outputFi>=maxOutputFi){
+                        outputFi=maxOutputFi;
+                    }
+                    std::vector<unsigned char> mess=robot.setRotationSpeed(outputFi);
+                    if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1){}
+                    rotationFinished=false;
                 }
-                std::vector<unsigned char> mess=robot.setTranslationSpeed(outputDist);
-                if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1){}
+            }
+            if(rotationFinished){
+
+
+                outputDist=(int)ceil(1000.0*newErrorDist);
+                //if((X<=(-rangeDist-X) && X>=(rangeDist-X) ) && (Y<=(-rangeDist-Y) && Y>=(rangeDist-Y) ))
+                if(newErrorDist>=-rangeDist&&newErrorDist<=rangeDist){
+                    std::vector<unsigned char> mess=robot.setTranslationSpeed(0);
+                    if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1){}
+                    finished=true;
+                }
+                else{
+                    if(outputDist<=minOutputDist){
+                        outputDist=minOutputDist;
+                    }
+                    if(outputDist>=maxOutputDist){
+                        outputDist=maxOutputDist;
+                    }
+                    std::vector<unsigned char> mess=robot.setTranslationSpeed(outputDist);
+                    if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1){}
+                }
             }
         }
-        usleep(50000);
     }
 }
 
@@ -332,7 +342,7 @@ void MainWindow::on_pushButton_3_clicked() //back
 void MainWindow::on_pushButton_6_clicked() //left
 {
 
-    std::vector<unsigned char> mess=robot.setRotationSpeed(M_PI/2);
+    std::vector<unsigned char> mess=robot.setRotationSpeed(M_PI/20);
     if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1)
     {
 
