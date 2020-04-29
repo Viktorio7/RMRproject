@@ -37,7 +37,34 @@ MainWindow::MainWindow(QWidget *parent) :
     minOutputDist=-300;
     maxOutputDist=300;
     rangeDist=0.325;
+    mapInit();
+    cout<<"Setup complete"<<endl;
+    for(int i=95-1;i>=0;i--){
+        for(int j=0;j<95;j++){
+            if(i==(95-1)/2&&j==(95-1)/2){
+                cout<<2;
+            } else {
+                cout<<mapa[j][i].obstacle;
+            }
+        }
+        cout<<endl;
+    }
+}
 
+MainWindow::~MainWindow()
+{
+    delete ui;
+}
+
+double MainWindow::degToRad(double deg){
+    return deg*M_PI/180;
+}
+
+double MainWindow::radToDeg(double rad){
+    return rad*180/M_PI;
+}
+
+void MainWindow::mapInit(){
     mapDimension=0;
 
     cout<<"loading map"<<endl;
@@ -46,6 +73,30 @@ MainWindow::MainWindow(QWidget *parent) :
     loader->load_map(filename,mapArea);
     if(mapArea.wall.points.empty()){
         cout<<"Empty map"<<endl;
+        int arraySize=100;
+        if(arraySize%2==0) arraySize++;
+        int startCoordinate=-arraySize*5;
+        int coordX=0;
+        int coordY=0;
+        mapa=new mapCoordiante* [arraySize];
+        for(int i=0;i<arraySize;i++){
+            mapa[i]=new mapCoordiante [arraySize];
+            coordY=0;
+            for(int j=0;j<arraySize;j++){
+                mapa[i][j].obstacle=false;
+                mapa[i][j].min[0]=startCoordinate+coordX;//x1
+                mapa[i][j].min[1]=startCoordinate+coordY;//y1
+                mapa[i][j].max[0]=mapa[i][j].min[0] + 10;//x2
+                mapa[i][j].max[1]=mapa[i][j].min[1] + 10;//y2
+                coordY+=10;
+            }
+            coordX+=10;
+        }
+        cout<<"Kontrola ["<<mapa[0][0].min[0]<<", "<<mapa[0][0].min[1]<<"] ["<<mapa[0][0].max[0]<<", "<<mapa[0][0].max[1]<<"]"<<endl;
+        cout<<"Kontrola ["<<mapa[(arraySize-1)/2][(arraySize-1)/2].min[0]<<", "<<mapa[(arraySize-1)/2][(arraySize-1)/2].min[1]\
+                <<"] ["<<mapa[(arraySize-1)/2][(arraySize-1)/2].max[0]<<", "<<mapa[(arraySize-1)/2][(arraySize-1)/2].max[1]<<"]"<<endl;
+        cout<<"Kontrola ["<<mapa[(arraySize-1)][(arraySize-1)].min[0]<<", "<<mapa[(arraySize-1)][(arraySize-1)].min[0]<<"] ["\
+                                                                                                                     <<mapa[(arraySize-1)][(arraySize-1)].max[0]<<", "<<mapa[(arraySize-1)][(arraySize-1)].max[0]<<"]"<<endl;
     } else {
         /*for (int i=0;i<mapArea.wall.numofpoints;i++){
             double tempWall=mapArea.wall.points.at(i).point.x;
@@ -76,28 +127,169 @@ MainWindow::MainWindow(QWidget *parent) :
             cout<<endl;
         }
         cout<<"["<<mapDimension<<"]"<<endl;
+        int arraySize=ceil(2*mapDimension/10.0);
         if(mapDimension>=10){
-            int arraySize=ceil(2*mapDimension/10.0);
-            mapa=new bool* [arraySize];
+            if(arraySize%2==0) arraySize++;
+            int startCoordinate=-arraySize*5;
+            int coordX=0;
+            int coordY=0;
+            mapa=new mapCoordiante* [arraySize];
             for(int i=0;i<arraySize;i++){
-                mapa[i]=new bool [arraySize];
-                memset(mapa[i],false,arraySize*sizeof(bool));
+                mapa[i]=new mapCoordiante [arraySize];
+                coordY=0;
+                for(int j=0;j<arraySize;j++){
+                    mapa[i][j].obstacle=false;
+                    mapa[i][j].min[0]=startCoordinate+coordX;//x1
+                    mapa[i][j].min[1]=startCoordinate+coordY;//y1
+                    mapa[i][j].max[0]=mapa[i][j].min[0] + 10;//x2
+                    mapa[i][j].max[1]=mapa[i][j].min[1] + 10;//y2
+                    coordY+=10;
+                }
+                coordX+=10;
             }
+            cout<<"Kontrola ["<<mapa[0][0].min[0]<<", "<<mapa[0][0].min[1]<<"] ["<<mapa[0][0].max[0]<<", "<<mapa[0][0].max[1]<<"]"<<endl;
+            cout<<"Kontrola ["<<mapa[(arraySize-1)/2][(arraySize-1)/2].min[0]<<", "<<mapa[(arraySize-1)/2][(arraySize-1)/2].min[1]\
+                    <<"] ["<<mapa[(arraySize-1)/2][(arraySize-1)/2].max[0]<<", "<<mapa[(arraySize-1)/2][(arraySize-1)/2].max[1]<<"]"<<endl;
+            cout<<"Kontrola ["<<mapa[(arraySize-1)][(arraySize-1)].min[0]<<", "<<mapa[(arraySize-1)][(arraySize-1)].min[0]<<"] ["\
+                    <<mapa[(arraySize-1)][(arraySize-1)].max[0]<<", "<<mapa[(arraySize-1)][(arraySize-1)].max[0]<<"]"<<endl;
+        }
+        for(int i=0;i<mapArea.wall.numofpoints-1;i++){
+            double diffX=mapArea.wall.points.at(i+1).point.x-mapArea.wall.points.at(i).point.x;
+            double diffY=mapArea.wall.points.at(i+1).point.y-mapArea.wall.points.at(i).point.y;
+            mapSet(mapArea.wall.points.at(i).point.x,mapArea.wall.points.at(i).point.y,diffX,diffY,arraySize);
+        }
+        double diffX=mapArea.wall.points.at(0).point.x-mapArea.wall.points.at(mapArea.wall.numofpoints-1).point.x;
+        double diffY=mapArea.wall.points.at(0).point.y-mapArea.wall.points.at(mapArea.wall.numofpoints-1).point.y;
+        mapSet(mapArea.wall.points.at(mapArea.wall.numofpoints-1).point.x,\
+               mapArea.wall.points.at(mapArea.wall.numofpoints-1).point.y,\
+               diffX,diffY,arraySize);
+        for(int i=0;i<mapArea.numofObjects;i++){
+            for(int j=0;j<mapArea.obstacle.at(i).numofpoints-1;j++){
+                double diffX=mapArea.obstacle.at(i).points.at(j+1).point.x-mapArea.obstacle.at(i).points.at(j).point.x;
+                double diffY=mapArea.obstacle.at(i).points.at(j+1).point.y-mapArea.obstacle.at(i).points.at(j).point.y;
+                mapSet(mapArea.obstacle.at(i).points.at(j).point.x,mapArea.obstacle.at(i).points.at(j).point.y,diffX,diffY,arraySize);
+            }
+            /*double diffX=mapArea.obstacle.at(i).points.at(0).point.x-mapArea.obstacle.at(i).points.at(mapArea.obstacle.at(i).numofpoints-1).point.x;
+            double diffY=mapArea.obstacle.at(i).points.at(0).point.x-mapArea.obstacle.at(i).points.at(mapArea.obstacle.at(i).numofpoints-1).point.y;
+            mapSet(mapArea.obstacle.at(i).points.at(mapArea.obstacle.at(i).numofpoints-1).point.x,\
+                   mapArea.obstacle.at(i).points.at(mapArea.obstacle.at(i).numofpoints-1).point.y,\
+                   diffX,diffY,arraySize);*/
         }
     }
 }
-
-MainWindow::~MainWindow()
-{
-    delete ui;
-}
-
-double MainWindow::degToRad(double deg){
-    return deg*M_PI/180;
-}
-
-double MainWindow::radToDeg(double rad){
-    return rad*180/M_PI;
+/*for(int i=0;i<mapArea.wall.numofpoints-1;i++){
+    int diffX=mapArea.wall.points.at(i+1).point.x-mapArea.wall.points.at(i).point.x;
+    int diffY=mapArea.wall.points.at(i+1).point.y-mapArea.wall.points.at(i).point.y;
+    if(diffX!=0){ //x vetva
+        if(diffX>0){
+            for(int k=0;k<diffX;k+=10){
+                for(int m=0;m<arraySize;m++){
+                    for(int n=0;n<arraySize;n++){
+                        int position=mapArea.wall.points.at(i).point.x+k;
+                        if(position>=mapa[m][n].min[0]&&position<=mapa[m][n].max[0]){
+                            int posY=mapArea.wall.points.at(i).point.y;
+                            if(posY>=mapa[m][n].min[1]&&posY<=mapa[m][n].max[1]){
+                                mapa[m][n].obstacle=true;
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            for(int k=0;k<-diffX;k+=10){
+                for(int m=0;m<arraySize;m++){
+                    for(int n=0;n<arraySize;n++){
+                        int position=mapArea.wall.points.at(i).point.x-k;
+                        if(position>=mapa[m][n].min[0]&&position<=mapa[m][n].max[0]){
+                            int posY=mapArea.wall.points.at(i).point.y;
+                            if(posY>=mapa[m][n].min[1]&&posY<=mapa[m][n].max[1]) mapa[m][n].obstacle=true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if(diffY!=0){ //y vetva
+        if(diffY>0){
+            for(int k=0;k<diffY;k+=10){
+                for(int m=0;m<arraySize;m++){
+                    for(int n=0;n<arraySize;n++){
+                        int position=mapArea.wall.points.at(i).point.y+k;
+                        if(position>=mapa[m][n].min[1]&&position<=mapa[m][n].max[1]){
+                            int posX=mapArea.wall.points.at(i).point.x;
+                            if(posX>=mapa[m][n].min[0]&&posX<=mapa[m][n].max[0]) mapa[m][n].obstacle=true;
+                        }
+                    }
+                }
+            }
+        } else {
+            for(int k=0;k<-diffY;k+=10){
+                for(int m=0;m<arraySize;m++){
+                    for(int n=0;n<arraySize;n++){
+                        int position=mapArea.wall.points.at(i).point.y-k;
+                        if(position>=mapa[m][n].min[1]&&position<=mapa[m][n].max[1]){
+                            int posX=mapArea.wall.points.at(i).point.x;
+                            if(posX>=mapa[m][n].min[0]&&posX<=mapa[m][n].max[0]) mapa[m][n].obstacle=true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}*/
+void MainWindow::mapSet(double x, double y, double diffX, double diffY, int arraySize){
+    if(diffX!=0){ //x vetva
+        if(diffX>0){
+            for(int k=0;k<diffX;k+=10){
+                for(int m=0;m<arraySize;m++){
+                    for(int n=0;n<arraySize;n++){
+                        double position=x+k;
+                        if(position>=mapa[m][n].min[0]&&position<=mapa[m][n].max[0]){
+                            if(y>=mapa[m][n].min[1]&&y<=mapa[m][n].max[1]){
+                                mapa[m][n].obstacle=true;
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            for(int k=0;k<-diffX;k+=10){
+                for(int m=0;m<arraySize;m++){
+                    for(int n=0;n<arraySize;n++){
+                        int position=x-k;
+                        if(position>=mapa[m][n].min[0]&&position<=mapa[m][n].max[0]){
+                            if(y>=mapa[m][n].min[1]&&y<=mapa[m][n].max[1]) mapa[m][n].obstacle=true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if(diffY!=0){ //y vetva
+        if(diffY>0){
+            for(int k=0;k<diffY;k+=10){
+                for(int m=0;m<arraySize;m++){
+                    for(int n=0;n<arraySize;n++){
+                        int position=y+k;
+                        if(position>=mapa[m][n].min[1]&&position<=mapa[m][n].max[1]){
+                            if(x>=mapa[m][n].min[0]&&x<=mapa[m][n].max[0]) mapa[m][n].obstacle=true;
+                        }
+                    }
+                }
+            }
+        } else {
+            for(int k=0;k<-diffY;k+=10){
+                for(int m=0;m<arraySize;m++){
+                    for(int n=0;n<arraySize;n++){
+                        int position=y-k;
+                        if(position>=mapa[m][n].min[1]&&position<=mapa[m][n].max[1]){
+                            if(x>=mapa[m][n].min[0]&&x<=mapa[m][n].max[0]) mapa[m][n].obstacle=true;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 void MainWindow::paintEvent(QPaintEvent *event)

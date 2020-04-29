@@ -35,6 +35,8 @@ public:
 
     void odometry();
     void positioning();
+    void mapInit();
+    void mapSet(double x, double y, double diffX, double diffY, int arraySize);
     double degToRad(double);
     double radToDeg(double);
 
@@ -81,6 +83,14 @@ private slots:
     void on_pushButton_10_clicked();
 
 private:
+    typedef struct
+    {
+        bool obstacle;
+        double min[2];
+        double max[2];
+
+    }mapCoordiante;
+    mapCoordiante **mapa;
     Ui::MainWindow *ui;
     void paintEvent(QPaintEvent *event);// Q_DECL_OVERRIDE;
     int updateLaserPicture;
@@ -108,7 +118,7 @@ private:
     double previousErrorDist,newErrorDist,rangeDist;
     int minOutputDist,outputDist,maxOutputDist;
 
-    bool **mapa;
+    //bool **mapa;
 
 public slots:
     void setUiValues(double robotX,double robotY,double robotFi);
