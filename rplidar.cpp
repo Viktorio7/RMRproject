@@ -8,7 +8,7 @@
 int
 set_interface_attribs (int fd, int speed, int parity)
 {
- /*       struct termios tty;
+    /*       struct termios tty;
         memset (&tty, 0, sizeof tty);
         if (tcgetattr (fd, &tty) != 0)
         {
@@ -43,13 +43,13 @@ set_interface_attribs (int fd, int speed, int parity)
                 printf ("error %d from tcsetattr", errno);
                 return -1;
         }*/
-        return 0;
+    return 0;
 }
 
 void
 set_blocking (int fd, int should_block)
 {
-   /*     struct termios tty;
+    /*     struct termios tty;
         memset (&tty, 0, sizeof tty);
         if (tcgetattr (fd, &tty) != 0)
         {
@@ -68,7 +68,7 @@ set_blocking (int fd, int should_block)
 
 int rplidar::connect(char *comport)
 {
-/*    hCom= open(comport,O_RDWR | O_NOCTTY | O_SYNC);
+    /*    hCom= open(comport,O_RDWR | O_NOCTTY | O_SYNC);
     if ( hCom== -1 )
     {
         // Chyba:  Port sa neda otvorit
@@ -154,7 +154,7 @@ void rplidar::recvCommandUDP()
         else if(buf[0]==5)
         {
             //reset spojenia
-         /*   stop();
+            /*   stop();
             close(hCom);
             usleep(100*1000);
             WasEnabled=0;
@@ -210,7 +210,7 @@ int rplidar::stop()
     stopMeasurement=1;
     pthread_join(threadHandle,NULL);
     unsigned char request[]={0xa5, 0x25};
-   // int Pocet=0;
+    // int Pocet=0;
     write(hCom,&request,2);
 
     usleep(2000);
@@ -219,7 +219,7 @@ int rplidar::stop()
     int readnum=0;
     do
     {
-         readnum=read(hCom,buffer,5000);
+        readnum=read(hCom,buffer,5000);
     }while(readnum>0);
 
     return 0;
@@ -364,13 +364,13 @@ Start:
         else
         {
             unsigned char requestS[]={0xa5, 0x25};
-           // int Pocet=0;
+            // int Pocet=0;
             usleep(100*1000);
             Pocet=write(hCom,&requestS,2);
             usleep(100*1000);
 
             //mazat buffer
-           // int i=PurgeComm(hCom,PURGE_TXCLEAR | PURGE_RXCLEAR);
+            // int i=PurgeComm(hCom,PURGE_TXCLEAR | PURGE_RXCLEAR);
             usleep(500*1000);
             goto Start;
         }

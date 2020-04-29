@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.11.1, 2020-04-28T15:21:29. -->
+<!-- Written by QtCreator 4.11.1, 2020-04-28T20:37:44. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -189,8 +189,9 @@
     </valuelist>
     <value type="int" key="PE.EnvironmentAspect.Base">2</value>
     <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes"/>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qt4ProjectManager.Qt4RunConfiguration:/home/viktorio/Desktop/demoRMR (ChCh)/demoRMR.pro</value>
-    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">/home/viktorio/Desktop/demoRMR (ChCh)/demoRMR.pro</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">demoRMR2</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qt4ProjectManager.Qt4RunConfiguration:/home/viktorio/Desktop/RMRproject/demoRMR.pro</value>
+    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">/home/viktorio/Desktop/RMRproject/demoRMR.pro</value>
     <value type="QString" key="RunConfiguration.Arguments"></value>
     <value type="bool" key="RunConfiguration.Arguments.multi">false</value>
     <value type="QString" key="RunConfiguration.OverrideDebuggerStartup"></value>

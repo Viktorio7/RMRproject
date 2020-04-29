@@ -14,6 +14,7 @@
 #include<stdlib.h>
 #include<vector>
 #include "CKobuki.h"
+#include "map_loader.h"
 
 #include "rplidar.h"
 namespace Ui {
@@ -33,6 +34,7 @@ public:
     void processThisRobot();
 
     void odometry();
+    void positioning();
     double degToRad(double);
     double radToDeg(double);
 
@@ -86,6 +88,8 @@ private:
     std::string ipaddress;
     CKobuki robot;
     TKobukiData robotdata;
+    TMapArea mapArea;
+    double mapDimension;
     int datacounter;
     int encoderStartLeft,encoderEndLeft,encoderStartRight,encoderEndRight;
     int encoderOldL, encoderOldR;
@@ -103,6 +107,8 @@ private:
 
     double previousErrorDist,newErrorDist,rangeDist;
     int minOutputDist,outputDist,maxOutputDist;
+
+    bool **mapa;
 
 public slots:
     void setUiValues(double robotX,double robotY,double robotFi);
