@@ -59,23 +59,23 @@ public:
         stopMeasurement=0;
     }
 
-     rplidar(char *comport)
-     {
-         WasEnabled=0;
-         ktoreMeranie=-1;
-         kdeJeCele=-1;
-         poslednePoslane=-1;
-         ktoreZapisujem=-1;
-         ktorePosielam=-1;
-         stopMeasurement=0;
-         int err=connect(comport);
-         if(err==-1)
-         {
-             printf("pruuuuser\n");
-         }
-         enable();
-         start();
-     }
+    rplidar(char *comport)
+    {
+        WasEnabled=0;
+        ktoreMeranie=-1;
+        kdeJeCele=-1;
+        poslednePoslane=-1;
+        ktoreZapisujem=-1;
+        ktorePosielam=-1;
+        stopMeasurement=0;
+        int err=connect(comport);
+        if(err==-1)
+        {
+            printf("pruuuuser\n");
+        }
+        enable();
+        start();
+    }
     virtual  ~rplidar()
     {
 
@@ -87,13 +87,13 @@ private:
     //--interne uchovane meranie poslednych dvoch a posielame aktualne (poslednych dvoch,aby sme mohli zapisovat kym posielame)
     LaserMeasurement localMeranie[3];
     //--ze ktore aktualne mame zapisane
-     long long ktoreMeranie;
+    long long ktoreMeranie;
     //--ktore pole ma pouzit na poslanie
     int kdeJeCele;
     int ktorePosielam;
     int ktoreZapisujem;
     //--ktore je posledne odovzdane uzivatelovi
-     long long poslednePoslane;
+    long long poslednePoslane;
     int hCom;
     pthread_t threadHandle; // handle na vlakno
     int threadID;  // id vlakna
@@ -103,11 +103,11 @@ public:
     //veci na broadcast
     struct sockaddr_in si_me, si_other,si_posli;
 
-        int s,  recv_len;
-        unsigned int slen;
-        char buf[50000];
-        void recvCommandUDP();
-        //------------------
+    int s,  recv_len;
+    unsigned int slen;
+    char buf[50000];
+    void recvCommandUDP();
+    //------------------
     // pripoji nas na laserovy dialkomer
     int connect(char *comport);
     //skontroluje funkcnost dialkomeru.. vhodne zavolat pred startom..
@@ -123,7 +123,7 @@ public:
     unsigned char getUnspecifiedResponse(unsigned char *request);
     //vrati nam aktualne meranie ak vzniklo nove, ak nieje nove meranie v numberOfScans je -1; ak nebolo inicializovane tak -2. ak nieje funkcne spojenie tak -3,ak nieje spustene meranie -4
     LaserMeasurement getMeasurement();
- int vystupvlakno;
+    int vystupvlakno;
 private:
 
     //--spustenie merania v novom vlakne (vycitavanie bezi v novom vlakne. treba ho stopnut ak chceme poslat request)

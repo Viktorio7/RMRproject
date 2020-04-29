@@ -13,7 +13,7 @@
 /// kazdy rozumny programator by urobil novu triedu..ale kto rozumny by robil v skolstve,ze ano
 int set_interface_attribs2 (int fd, int speed, int parity)
 {
-  /*  struct termios tty;
+    /*  struct termios tty;
     memset (&tty, 0, sizeof tty);
     if (tcgetattr (fd, &tty) != 0)
     {
@@ -53,7 +53,7 @@ int set_interface_attribs2 (int fd, int speed, int parity)
 
 void set_blocking2 (int fd, int should_block)
 {
-  /*  struct termios tty;
+    /*  struct termios tty;
     memset (&tty, 0, sizeof tty);
     if (tcgetattr (fd, &tty) != 0)
     {
@@ -88,7 +88,7 @@ std::vector<unsigned char> CKobuki::setLed(int led1, int led2)
     message[7] = message[2] ^ message[3] ^ message[4] ^ message[5] ^ message[6];
 
     std::vector<unsigned char> vystup(message,message+sizeof(message)/sizeof(message[0]));
-        return vystup;
+    return vystup;
 }
 
 
@@ -101,7 +101,7 @@ std::vector<unsigned char> CKobuki::setTranslationSpeed(int mmpersec)
 
 
     std::vector<unsigned char> vystup(message,message+sizeof(message)/sizeof(message[0]));
-        return vystup;
+    return vystup;
 
 }
 
@@ -113,7 +113,7 @@ std::vector<unsigned char> CKobuki::setRotationSpeed(double radpersec)
 
 
     std::vector<unsigned char> vystup(message,message+sizeof(message)/sizeof(message[0]));
-        return vystup;
+    return vystup;
 }
 
 std::vector<unsigned char> CKobuki::setArcSpeed(int mmpersec, int radius)
@@ -133,7 +133,7 @@ std::vector<unsigned char> CKobuki::setArcSpeed(int mmpersec, int radius)
     message[13] = message[2] ^ message[3] ^ message[4] ^ message[5] ^ message[6] ^ message[7] ^ message[8] ^ message[9] ^ message[10] ^ message[11] ^ message[12];
 
     std::vector<unsigned char> vystup(message,message+sizeof(message)/sizeof(message[0]));
-        return vystup;
+    return vystup;
 }
 
 ///2 body navyse prvej skupine ktora pomocou tejto funkcie zahra melodiu pink panther (staci 5 sekund)
@@ -146,7 +146,7 @@ std::vector<unsigned char> CKobuki::setSound(int noteinHz, int duration)
     message[12] = message[2] ^ message[3] ^ message[4] ^ message[5] ^ message[6] ^ message[7]^ message[8]^ message[9]^ message[10]^ message[11];
 
 
-std::vector<unsigned char> vystup(message,message+sizeof(message)/sizeof(message[0]));
+    std::vector<unsigned char> vystup(message,message+sizeof(message)/sizeof(message[0]));
     return vystup;
 }
 
@@ -163,7 +163,7 @@ std::vector<unsigned char> CKobuki::setDefaultPID()
 
 
     std::vector<unsigned char> vystup(message,message+sizeof(message)/sizeof(message[0]));
-        return vystup;
+    return vystup;
 }
 
 

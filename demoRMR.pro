@@ -22,10 +22,12 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
+    map_loader.cpp \
     rplidar.cpp \
     CKobuki.cpp
 
 HEADERS  += mainwindow.h \
+    map_loader.h \
     rplidar.h \
     CKobuki.h
 

@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "map_loader.h"
 #include <QPainter>
 #include <unistd.h>
 
@@ -36,6 +37,54 @@ MainWindow::MainWindow(QWidget *parent) :
     minOutputDist=-300;
     maxOutputDist=300;
     rangeDist=0.325;
+
+    mapDimension=0;
+
+    cout<<"loading map"<<endl;
+    map_loader *loader= new map_loader();
+    char filename[]=/*{"priestor.txt"}*/{"/home/viktorio/Desktop/priestorEdited.txt"};
+    loader->load_map(filename,mapArea);
+    if(mapArea.wall.points.empty()){
+        cout<<"Empty map"<<endl;
+    } else {
+        /*for (int i=0;i<mapArea.wall.numofpoints;i++){
+            double tempWall=mapArea.wall.points.at(i).point.x;
+            mapArea.wall.points.at(i).point.x=mapArea.wall.points.at(i).point.y;
+            mapArea.wall.points.at(i).point.y=tempWall;
+            for(int j=0;j<mapArea.obstacle.at(i).numofpoints;j++){
+                double tempObstacle=mapArea.obstacle.at(i).points.at(j).point.x;
+                mapArea.obstacle.at(i).points.at(j).point.x=mapArea.obstacle.at(i).points.at(j).point.y;
+                mapArea.obstacle.at(i).points.at(j).point.y=tempObstacle;
+            }
+        }*/
+        cout<<"Wall"<<endl;
+        for(int i=0;i<mapArea.wall.numofpoints;i++){
+            cout<<mapArea.wall.points.at(i).point.x<<" "<<mapArea.wall.points.at(i).point.y<<endl;
+            if(abs(mapArea.wall.points.at(i).point.x)>mapDimension){
+                mapDimension=abs(mapArea.wall.points.at(i).point.x);
+            }
+            if(abs(mapArea.wall.points.at(i).point.y)>mapDimension){
+                mapDimension=abs(mapArea.wall.points.at(i).point.y);
+            }
+        }
+        cout<<endl;
+        for(int i=0;i<mapArea.numofObjects;i++){
+            cout<<"Object "<<i<<endl;
+            for(int j=0;j<mapArea.obstacle.at(i).numofpoints;j++){
+                cout<<mapArea.obstacle.at(i).points.at(j).point.x<<" "<<mapArea.obstacle.at(i).points.at(j).point.y<<endl;
+            }
+            cout<<endl;
+        }
+        cout<<"["<<mapDimension<<"]"<<endl;
+        if(mapDimension>=10){
+            int arraySize=ceil(2*mapDimension/10.0);
+            mapa=new bool* [arraySize];
+            for(int i=0;i<arraySize;i++){
+                mapa[i]=new bool [arraySize];
+                memset(mapa[i],false,arraySize*sizeof(bool));
+            }
+        }
+    }
 }
 
 MainWindow::~MainWindow()
@@ -99,8 +148,8 @@ void MainWindow::odometry()
         encoderOldR = robotdata.EncoderRight;
         encoderOldL = robotdata.EncoderLeft;
 
-        Fi = 0;
-        FiOld = 0;
+        Fi = M_PI/2;
+        FiOld = M_PI/2;
 
         X = 0;
         Y = 0;
@@ -129,28 +178,7 @@ void MainWindow::odometry()
     else if(encoderDeltaL>65000){
         encoderDeltaL = robotdata.EncoderLeft - 65536 -encoderOldL;
     }
-    /*
-    if (robotdata.EncoderRight - encoderOldR >= -60000)
-    {
-        overflowR = -60000;
-    }
 
-    if (robotdata.EncoderRight - encoderOldR <= 60000)
-    {
-        overflowR = 60000;
-    }
-    if (robotdata.EncoderLeft - encoderOldL >= -60000)
-    {
-        overflowL = -60000;
-    }
-
-    if (robotdata.EncoderLeft - encoderOldL <= 60000)
-    {
-        overflowL = 60000;
-    }
-
-    distRight = CKobuki::getTickToMeter() * (robotdata.EncoderRight + overflowR - encoderOldR);
-    distLeft  = CKobuki::getTickToMeter() * (robotdata.EncoderLeft  + overflowL - encoderOldL);*/
     distRight = CKobuki::getTickToMeter() * (encoderDeltaR);
     distLeft  = CKobuki::getTickToMeter() * (encoderDeltaL);
 
@@ -181,7 +209,7 @@ void MainWindow::odometry()
 
     XOld = X;
     YOld = Y;
-    //FiOld = Fi;
+
     if(Fi<-M_PI){
         FiOld=M_PI;
     }
@@ -193,27 +221,8 @@ void MainWindow::odometry()
     }
 }
 
-void MainWindow::processThisRobot()
+void MainWindow::positioning()
 {
-    /*
-    ///tu mozete robit s datami z robota
-    /// ale nic vypoctovo narocne - to iste vlakno ktore cita data z robota
-    ///teraz tu len vypisujeme data z robota(kazdy 5ty krat. ale mozete skusit aj castejsie). vyratajte si polohu. a vypiste spravnu
-    if(datacounter%5==0)
-    {
-        ///ak nastavite hodnoty priamo do prvkov okna,ako je to na tychto zakomentovanych riadkoch tak sa moze stat ze vam program padne
-    //ui->lineEdit_2->setText(QString::number(robotdata.EncoderRight));
-    //ui->lineEdit_3->setText(QString::number(robotdata.EncoderLeft));
-    //ui->lineEdit_4->setText(QString::number(robotdata.GyroAngle));
-        /// lepsi pristup je nastavit len nejaku premennu, a poslat signal oknu na prekreslenie
-        /// okno pocuva vo svojom slote a vasu premennu nastavi tak ako chcete
-        emit uiValuesChanged(15,rand()%100,robotdata.EncoderLeft);
-        ///toto neodporucam na nejake komplikovane struktury. robit to kopiu dat. radsej vtedy posielajte
-        /// prazdny signal a slot bude vykreslovat strukturu (vtedy ju musite mat samozrejme ako member premmennu v mainwindow.ak u niekoho najdem globalnu premennu,tak bude cistit bludisko zubnou kefkou.. kefku dodam)
-        /// vtedy ale odporucam pouzit mutex, aby sa vam nestalo ze budete pocas vypisovania prepisovat niekde inde
-    */
-    odometry();
-    if(counter%5==0) emit uiValuesChanged(round(X*1000)/1000,round(Y*1000)/1000,round((radToDeg(Fi)*100)/100));
     if(counter%10==0){
         if(!finished){
             vectX=destX-X;
@@ -271,6 +280,30 @@ void MainWindow::processThisRobot()
     }
 }
 
+void MainWindow::processThisRobot()
+{
+    /*
+    ///tu mozete robit s datami z robota
+    /// ale nic vypoctovo narocne - to iste vlakno ktore cita data z robota
+    ///teraz tu len vypisujeme data z robota(kazdy 5ty krat. ale mozete skusit aj castejsie). vyratajte si polohu. a vypiste spravnu
+    if(datacounter%5==0)
+    {
+        ///ak nastavite hodnoty priamo do prvkov okna,ako je to na tychto zakomentovanych riadkoch tak sa moze stat ze vam program padne
+    //ui->lineEdit_2->setText(QString::number(robotdata.EncoderRight));
+    //ui->lineEdit_3->setText(QString::number(robotdata.EncoderLeft));
+    //ui->lineEdit_4->setText(QString::number(robotdata.GyroAngle));
+        /// lepsi pristup je nastavit len nejaku premennu, a poslat signal oknu na prekreslenie
+        /// okno pocuva vo svojom slote a vasu premennu nastavi tak ako chcete
+        emit uiValuesChanged(15,rand()%100,robotdata.EncoderLeft);
+        ///toto neodporucam na nejake komplikovane struktury. robit to kopiu dat. radsej vtedy posielajte
+        /// prazdny signal a slot bude vykreslovat strukturu (vtedy ju musite mat samozrejme ako member premmennu v mainwindow.ak u niekoho najdem globalnu premennu,tak bude cistit bludisko zubnou kefkou.. kefku dodam)
+        /// vtedy ale odporucam pouzit mutex, aby sa vam nestalo ze budete pocas vypisovania prepisovat niekde inde
+    */
+    odometry();
+    if(counter%5==0) emit uiValuesChanged(round(X*1000)/10,round(Y*1000)/10,round((radToDeg(Fi)*100)/100));
+    positioning();
+}
+
 void MainWindow::processThisLidar(LaserMeasurement &laserData)
 {
     mutex.lock();//idem prepisovat copyOfLaserData ktoru pouziva paintEvent
@@ -312,8 +345,8 @@ void MainWindow::on_pushButton_10_clicked() // GoTo button
     if((!ui->lineEdit_5->text().isEmpty())&&(!ui->lineEdit_6->text().isEmpty())){
         QString SetX=ui->lineEdit_5->text();
         QString SetY=ui->lineEdit_6->text();
-        destX=SetX.toDouble();
-        destY=SetY.toDouble();
+        destX=SetX.toDouble()/100.0;
+        destY=SetY.toDouble()/100.0;
         finished=false;
     }
 }
