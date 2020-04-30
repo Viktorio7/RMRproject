@@ -11,6 +11,8 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 BUILDDIR = $$PWD/build
 
+INCLUDEPATH = $$PWD/Eigen
+
 OBJECTS_DIR = $${BUILDDIR}
 MOC_DIR = $${BUILDDIR}
 RCC_DIR = $${BUILDDIR}

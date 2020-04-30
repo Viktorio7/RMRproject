@@ -15,8 +15,8 @@
 #include<vector>
 #include "CKobuki.h"
 #include "map_loader.h"
-
 #include "rplidar.h"
+#include "Eigen/Eigen"
 namespace Ui {
 class MainWindow;
 }
@@ -100,6 +100,7 @@ private:
     TKobukiData robotdata;
     TMapArea mapArea;
     double mapDimension;
+    int arraySize;
     int datacounter;
     int encoderStartLeft,encoderEndLeft,encoderStartRight,encoderEndRight;
     int encoderOldL, encoderOldR;
@@ -118,7 +119,8 @@ private:
     double previousErrorDist,newErrorDist,rangeDist;
     int minOutputDist,outputDist,maxOutputDist;
 
-    //bool **mapa;
+    Eigen::MatrixXd Rz,Tx;
+    Eigen::VectorXd P,P0;
 
 public slots:
     void setUiValues(double robotX,double robotY,double robotFi);

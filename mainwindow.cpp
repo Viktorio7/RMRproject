@@ -3,14 +3,11 @@
 #include "map_loader.h"
 #include <QPainter>
 #include <unistd.h>
+#include "Eigen/Eigen"
 
+using namespace Eigen;
 using namespace std;
-///TOTO JE DEMO PROGRAM... NEPREPISUJ NIC,ALE SKOPIRUJ SI MA NIEKAM DO INEHO FOLDERA
-/// NASLEDNE V POLOZKE Projects SKONTROLUJ CI JE VYPNUTY shadow build...
-/// POTOM MIESTO TYCHTO PAR RIADKOV NAPIS SVOJE MENO ALEBO NEJAKY INY LUKRATIVNY IDENTIFIKATOR
-/// KED SA NAJBLIZSIE PUSTIS DO PRACE, SKONTROLUJ CI JE MIESTO TOHTO TEXTU TVOJ IDENTIFIKATOR
-/// AZ POTOM ZACNI ROBIT... AK TO NESPRAVIS, POJDU BODY DOLE... A NIE JEDEN,ALEBO DVA ALE BUDES RAD
-/// AK SA DOSTANES NA SKUSKU
+///Viktor Christov, Andrej Chmurciak
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -24,7 +21,7 @@ MainWindow::MainWindow(QWidget *parent) :
     rotationFinished=false;
     counter=0;
     datacounter=0;
-
+    MatrixXd m(3,3);
     newErrorFi=0;
     previousErrorFi=0;
     minOutputFi=-M_PI;
@@ -49,6 +46,12 @@ MainWindow::MainWindow(QWidget *parent) :
         }
         cout<<endl;
     }
+    Rz.resize(3,3);
+    Tx.resize(3,3);
+    P.resize(3);
+    Rz<<0,0,0,0,0,0,0,0,1;
+    Tx<<1,0,0,0,1,0,0,0,1;
+    P<<0,0,1;
 }
 
 MainWindow::~MainWindow()
@@ -73,7 +76,7 @@ void MainWindow::mapInit(){
     loader->load_map(filename,mapArea);
     if(mapArea.wall.points.empty()){
         cout<<"Empty map"<<endl;
-        int arraySize=100;
+        arraySize=101;
         if(arraySize%2==0) arraySize++;
         int startCoordinate=-arraySize*5;
         int coordX=0;
@@ -127,7 +130,7 @@ void MainWindow::mapInit(){
             cout<<endl;
         }
         cout<<"["<<mapDimension<<"]"<<endl;
-        int arraySize=ceil(2*mapDimension/10.0);
+        arraySize=ceil(2*mapDimension/10.0);
         if(mapDimension>=10){
             if(arraySize%2==0) arraySize++;
             int startCoordinate=-arraySize*5;
@@ -177,66 +180,7 @@ void MainWindow::mapInit(){
         }
     }
 }
-/*for(int i=0;i<mapArea.wall.numofpoints-1;i++){
-    int diffX=mapArea.wall.points.at(i+1).point.x-mapArea.wall.points.at(i).point.x;
-    int diffY=mapArea.wall.points.at(i+1).point.y-mapArea.wall.points.at(i).point.y;
-    if(diffX!=0){ //x vetva
-        if(diffX>0){
-            for(int k=0;k<diffX;k+=10){
-                for(int m=0;m<arraySize;m++){
-                    for(int n=0;n<arraySize;n++){
-                        int position=mapArea.wall.points.at(i).point.x+k;
-                        if(position>=mapa[m][n].min[0]&&position<=mapa[m][n].max[0]){
-                            int posY=mapArea.wall.points.at(i).point.y;
-                            if(posY>=mapa[m][n].min[1]&&posY<=mapa[m][n].max[1]){
-                                mapa[m][n].obstacle=true;
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            for(int k=0;k<-diffX;k+=10){
-                for(int m=0;m<arraySize;m++){
-                    for(int n=0;n<arraySize;n++){
-                        int position=mapArea.wall.points.at(i).point.x-k;
-                        if(position>=mapa[m][n].min[0]&&position<=mapa[m][n].max[0]){
-                            int posY=mapArea.wall.points.at(i).point.y;
-                            if(posY>=mapa[m][n].min[1]&&posY<=mapa[m][n].max[1]) mapa[m][n].obstacle=true;
-                        }
-                    }
-                }
-            }
-        }
-    }
-    if(diffY!=0){ //y vetva
-        if(diffY>0){
-            for(int k=0;k<diffY;k+=10){
-                for(int m=0;m<arraySize;m++){
-                    for(int n=0;n<arraySize;n++){
-                        int position=mapArea.wall.points.at(i).point.y+k;
-                        if(position>=mapa[m][n].min[1]&&position<=mapa[m][n].max[1]){
-                            int posX=mapArea.wall.points.at(i).point.x;
-                            if(posX>=mapa[m][n].min[0]&&posX<=mapa[m][n].max[0]) mapa[m][n].obstacle=true;
-                        }
-                    }
-                }
-            }
-        } else {
-            for(int k=0;k<-diffY;k+=10){
-                for(int m=0;m<arraySize;m++){
-                    for(int n=0;n<arraySize;n++){
-                        int position=mapArea.wall.points.at(i).point.y-k;
-                        if(position>=mapa[m][n].min[1]&&position<=mapa[m][n].max[1]){
-                            int posX=mapArea.wall.points.at(i).point.x;
-                            if(posX>=mapa[m][n].min[0]&&posX<=mapa[m][n].max[0]) mapa[m][n].obstacle=true;
-                        }
-                    }
-                }
-            }
-        }
-    }
-}*/
+
 void MainWindow::mapSet(double x, double y, double diffX, double diffY, int arraySize){
     if(diffX!=0){ //x vetva
         if(diffX>0){
@@ -297,17 +241,49 @@ void MainWindow::paintEvent(QPaintEvent *event)
     QPainter painter(this);
     ///prekreslujem lidar len vtedy, ked viem ze mam nove data. paintevent sa
     /// moze pochopitelne zavolat aj z inych dovodov, napriklad zmena velkosti okna
-    painter.setBrush(Qt::black);//cierna farba pozadia(pouziva sa ako fill pre napriklad funkciu drawRect)
+    painter.setBrush(Qt::gray);//cierna farba pozadia(pouziva sa ako fill pre napriklad funkciu drawRect)
     QPen pero;
     pero.setStyle(Qt::SolidLine); //styl pera - plna ciara
     pero.setWidth(3);//hrubka pera -3pixely
     pero.setColor(Qt::green);//farba je zelena
     QRect rect;//(20,120,700,500);
     rect= ui->frame->geometry();//ziskate porametre stvorca,do ktoreho chcete kreslit
-
-
-
+    //cout<<rect.x()<<" "<<rect.y()<<" "<<rect.width()<<" "<<rect.height()<<" "<<rect.width()/double(arraySize)<<" "<<rect.height()/double(arraySize)<<endl;
+    cout<<rect.width()/2<<" "<<rect.height()/2<<endl;
     painter.drawRect(rect);//vykreslite stvorec
+    double blockWidth=rect.width()/double(arraySize);
+    double blockHeight=rect.height()/double(arraySize);
+    double centerX=rect.x()+rect.width()/2;
+    double centerY=rect.y()+rect.height()/2;
+    double xOffset=0;
+    double yOffset=0;
+    for(int i=arraySize-1;i>=0;i--){
+        xOffset=0;
+        for(int j=0;j<arraySize;j++){
+            if(mapa[j][i].obstacle){
+                painter.setBrush(Qt::black);
+                painter.drawRect(rect.x()+xOffset,rect.y()+yOffset,blockWidth,blockHeight);
+            } else if(j==(arraySize-1)/2&&i==(arraySize-1)/2){
+                painter.setBrush(Qt::green);
+                painter.drawRect(rect.x()+xOffset,rect.y()+yOffset,blockWidth,blockHeight);
+            } else {
+                painter.setBrush(Qt::white);
+                painter.drawRect(rect.x()+xOffset,rect.y()+yOffset,blockWidth,blockHeight);
+            }
+            xOffset+=blockWidth;
+        }
+        yOffset+=blockHeight;
+    }
+    Tx(2,0)=X;
+    Tx(2,1)=Y;
+    Rz(0,0)=cos(Fi);
+    Rz(0,1)=sin(Fi);
+    Rz(1,0)=-sin(Fi);
+    Rz(1,1)=cos(Fi);
+    P(0)=35*((blockWidth+blockHeight)/2)/10;
+    P0=Tx*Rz*P;
+    cout<<P0(0)<<" "<<P0(1)<<endl;
+    painter.drawLine(centerX,centerY,centerX+P0(0),centerY+P0(1));
     if(updateLaserPicture==1)
     {
 
