@@ -21,7 +21,6 @@ MainWindow::MainWindow(QWidget *parent) :
     rotationFinished=false;
     counter=0;
     datacounter=0;
-    MatrixXd m(3,3);
     newErrorFi=0;
     previousErrorFi=0;
     minOutputFi=-M_PI;
@@ -46,12 +45,14 @@ MainWindow::MainWindow(QWidget *parent) :
         }
         cout<<endl;
     }
-    Rz.resize(3,3);
-    Tx.resize(3,3);
-    P.resize(3);
-    Rz<<0,0,0,0,0,0,0,0,1;
-    Tx<<1,0,0,0,1,0,0,0,1;
-    P<<0,0,1;
+    Rzr1.resize(3,3);
+    Txr1.resize(3,3);
+    Pr.resize(3);
+    Rzr2.resize(3,3);
+    Rzr1<<0,0,0,0,0,0,0,0,1;
+    Txr1<<1,0,0,0,1,0,0,0,1;
+    Rzr2<<0,0,0,0,0,0,0,0,1;
+    Pr<<0,0,1;
 }
 
 MainWindow::~MainWindow()
@@ -172,11 +173,6 @@ void MainWindow::mapInit(){
                 double diffY=mapArea.obstacle.at(i).points.at(j+1).point.y-mapArea.obstacle.at(i).points.at(j).point.y;
                 mapSet(mapArea.obstacle.at(i).points.at(j).point.x,mapArea.obstacle.at(i).points.at(j).point.y,diffX,diffY,arraySize);
             }
-            /*double diffX=mapArea.obstacle.at(i).points.at(0).point.x-mapArea.obstacle.at(i).points.at(mapArea.obstacle.at(i).numofpoints-1).point.x;
-            double diffY=mapArea.obstacle.at(i).points.at(0).point.x-mapArea.obstacle.at(i).points.at(mapArea.obstacle.at(i).numofpoints-1).point.y;
-            mapSet(mapArea.obstacle.at(i).points.at(mapArea.obstacle.at(i).numofpoints-1).point.x,\
-                   mapArea.obstacle.at(i).points.at(mapArea.obstacle.at(i).numofpoints-1).point.y,\
-                   diffX,diffY,arraySize);*/
         }
     }
 }
@@ -249,7 +245,7 @@ void MainWindow::paintEvent(QPaintEvent *event)
     QRect rect;//(20,120,700,500);
     rect= ui->frame->geometry();//ziskate porametre stvorca,do ktoreho chcete kreslit
     //cout<<rect.x()<<" "<<rect.y()<<" "<<rect.width()<<" "<<rect.height()<<" "<<rect.width()/double(arraySize)<<" "<<rect.height()/double(arraySize)<<endl;
-    cout<<rect.width()/2<<" "<<rect.height()/2<<endl;
+    //cout<<rect.width()/2<<" "<<rect.height()/2<<endl;
     painter.drawRect(rect);//vykreslite stvorec
     double blockWidth=rect.width()/double(arraySize);
     double blockHeight=rect.height()/double(arraySize);
@@ -274,16 +270,27 @@ void MainWindow::paintEvent(QPaintEvent *event)
         }
         yOffset+=blockHeight;
     }
-    Tx(2,0)=X;
-    Tx(2,1)=Y;
-    Rz(0,0)=cos(Fi);
-    Rz(0,1)=sin(Fi);
-    Rz(1,0)=-sin(Fi);
-    Rz(1,1)=cos(Fi);
-    P(0)=35*((blockWidth+blockHeight)/2)/10;
-    P0=Tx*Rz*P;
-    cout<<P0(0)<<" "<<P0(1)<<endl;
-    painter.drawLine(centerX,centerY,centerX+P0(0),centerY+P0(1));
+    /*double posFi=atan2(Y,X);
+    Rzr1(0,0)=cos(posFi);
+    Rzr1(0,1)=sin(posFi);
+    Rzr1(1,0)=-sin(posFi);
+    Rzr1(1,1)=cos(posFi);*/
+
+
+    Txr1(0,2)=X*100*blockWidth/10;
+    Txr1(1,2)=-Y*100*blockWidth/10;
+    Pr(0)=0;
+    Pr0=Txr1*Pr;
+    Rzr1(0,0)=cos(Fi);
+    Rzr1(0,1)=sin(Fi);
+    Rzr1(1,0)=-sin(Fi);
+    Rzr1(1,1)=cos(Fi);
+    Pr(0)=(35/2.0)*((blockWidth+blockHeight)/2)/10;
+    Pr1=Txr1*Rzr1*Pr;
+    painter.setBrush(Qt::red);
+    painter.drawEllipse(centerX+Pr0(0)-Pr(0),centerY+Pr0(1)-Pr(0),2*Pr(0),2*Pr(0));
+    painter.setBrush(Qt::black);
+    painter.drawLine(centerX+Pr0(0),centerY+Pr0(1),centerX+Pr1(0),centerY+Pr1(1));
     if(updateLaserPicture==1)
     {
 
@@ -298,9 +305,9 @@ void MainWindow::paintEvent(QPaintEvent *event)
             //tu sa rata z polarnych suradnic na kartezske, a zaroven sa upravuje mierka aby sme sa zmestili do
             //do vyhradeneho stvorca aspon castou merania.. ale nieje to pekne, krajsie by bolo
             //keby ste nastavovali mierku tak,aby bolo v okne zobrazene cele meranie (treba najst min a max pre x a y suradnicu a podla toho to prenasobit)
-            int dist=copyOfLaserData.Data[k].scanDistance/15;//delim 15 aby som sa aspon niektorymi udajmi zmestil do okna.
-            int xp=rect.width()-(rect.width()/2+dist*2*sin((357.0+copyOfLaserData.Data[k].scanAngle)*3.14159/180.0))+rect.topLeft().x();
-            int yp=rect.height()-(rect.height()/2+dist*2*cos((357.0+copyOfLaserData.Data[k].scanAngle)*3.14159/180.0))+rect.topLeft().y();
+            int dist=copyOfLaserData.Data[k].scanDistance/24.8;
+            int xp=rect.width() -(/*rect.width()/2*/ -rect.x()+centerX-Pr0(0)+dist*2*sin((degToRad((-1)+copyOfLaserData.Data[k].scanAngle)+Fi-M_PI/2)))+rect.topLeft().x();
+            int yp=rect.height()-(/*rect.height()/2*/-rect.y()+centerY-Pr0(1)+dist*2*cos((degToRad((-1)+copyOfLaserData.Data[k].scanAngle)+Fi-M_PI/2)))+rect.topLeft().y();
             if(rect.contains(xp,yp))
                 painter.drawEllipse(QPoint(xp, yp),2,2);//vykreslime kruh s polomerom 2px
         }
@@ -478,6 +485,35 @@ void MainWindow::processThisLidar(LaserMeasurement &laserData)
     memcpy( &copyOfLaserData,&laserData,sizeof(LaserMeasurement));
     //tu mozete robit s datami z lidaru.. napriklad najst prekazky, zapisat do mapy. naplanovat ako sa prekazke vyhnut.
     // ale nic vypoctovo narocne - to iste vlakno ktore cita data z lidaru
+    for(int k=0;k<copyOfLaserData.numberOfScans;k++){
+        double lidarAngle=copyOfLaserData.Data[k].scanAngle;
+        double lidarDistance=copyOfLaserData.Data[k].scanDistance;
+        MatrixXd Txl1(3,3);
+        Txl1<<0,0,X*100,0,0,Y*100,0,0,1;
+        MatrixXd Rzl1(3,3);
+        Rzl1<<cos(degToRad(lidarAngle)+Fi),sin(degToRad(lidarAngle)+Fi),0,-sin(degToRad(lidarAngle)+Fi),cos(degToRad(lidarAngle)+Fi),0,0,0,1;
+        VectorXd Txl2(3);
+        Txl2<<lidarDistance,0,1;
+        VectorXd P(3);
+        P=Txl1*Rzl1*Txl2;
+        if(k==0){
+            cout<<lidarDistance<<" "<<lidarAngle<<endl;
+            cout<<"x: "<<P(0)<<" y: "<<P(1)<<endl;
+            Txl2<<0,0,1;
+            VectorXd P1(3);
+            P1=Txl1*Rzl1*Txl2;
+            cout<<"x: "<<P1(0)<<" y: "<<P1(1)<<endl;
+        }
+        for(int i=0;i<arraySize-1;i++){
+            for(int j=0;j<arraySize-1;j++){
+                if(P(0)>=mapa[i][j].min[0]&&P(0)<=mapa[i][j].max[0]){
+                    if(P(1)>=mapa[i][j].min[1]&&P(1)<=mapa[i][j].max[1]){
+                        mapa[i][j].obstacle=true;
+                    }
+                }
+            }
+        }
+    }
     updateLaserPicture=1;
     mutex.unlock();//skoncil som
     update();//tento prikaz je vlastne signal, ktory prinuti prekreslit obrazovku.. zavola sa paintEvent funkcia
@@ -522,7 +558,7 @@ void MainWindow::on_pushButton_10_clicked() // GoTo button
 void MainWindow::on_pushButton_2_clicked() //forward
 {
     //pohyb dopredu
-    std::vector<unsigned char> mess=robot.setTranslationSpeed(20);
+    std::vector<unsigned char> mess=robot.setTranslationSpeed(100);
     ///ak by ste chceli miesto pohybu dopredu napriklad pohyb po kruznici s polomerom 1 meter zavolali by ste funkciu takto:
     //std::vector<unsigned char> mess=robot.setArcSpeed(100,1000);
     if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1)
@@ -533,7 +569,7 @@ void MainWindow::on_pushButton_2_clicked() //forward
 
 void MainWindow::on_pushButton_3_clicked() //back
 {
-    std::vector<unsigned char> mess=robot.setTranslationSpeed(-20);
+    std::vector<unsigned char> mess=robot.setTranslationSpeed(-100);
     if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1)
     {
 

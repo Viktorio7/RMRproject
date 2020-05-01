@@ -119,8 +119,8 @@ private:
     double previousErrorDist,newErrorDist,rangeDist;
     int minOutputDist,outputDist,maxOutputDist;
 
-    Eigen::MatrixXd Rz,Tx;
-    Eigen::VectorXd P,P0;
+    Eigen::MatrixXd Rzr1,Txr1,Rzr2;
+    Eigen::VectorXd Pr,Pr0,Pr1;
 
 public slots:
     void setUiValues(double robotX,double robotY,double robotFi);

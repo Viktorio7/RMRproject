@@ -65,7 +65,7 @@ public:
     {
         if (MainWindow->objectName().isEmpty())
             MainWindow->setObjectName(QString::fromUtf8("MainWindow"));
-        MainWindow->resize(804, 743);
+        MainWindow->resize(954, 885);
         centralWidget = new QWidget(MainWindow);
         centralWidget->setObjectName(QString::fromUtf8("centralWidget"));
         gridLayout = new QGridLayout(centralWidget);
@@ -74,12 +74,12 @@ public:
         gridLayout->setObjectName(QString::fromUtf8("gridLayout"));
         frame = new QFrame(centralWidget);
         frame->setObjectName(QString::fromUtf8("frame"));
-        QSizePolicy sizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Expanding);
+        QSizePolicy sizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         sizePolicy.setHorizontalStretch(0);
         sizePolicy.setVerticalStretch(0);
         sizePolicy.setHeightForWidth(frame->sizePolicy().hasHeightForWidth());
         frame->setSizePolicy(sizePolicy);
-        frame->setMinimumSize(QSize(600, 600));
+        frame->setMinimumSize(QSize(750, 750));
         frame->setFrameShape(QFrame::StyledPanel);
         frame->setFrameShadow(QFrame::Raised);
 
@@ -90,27 +90,24 @@ public:
         verticalLayout->setObjectName(QString::fromUtf8("verticalLayout"));
         pushButton_9 = new QPushButton(centralWidget);
         pushButton_9->setObjectName(QString::fromUtf8("pushButton_9"));
-        QSizePolicy sizePolicy1(QSizePolicy::Fixed, QSizePolicy::Fixed);
-        sizePolicy1.setHorizontalStretch(0);
-        sizePolicy1.setVerticalStretch(0);
-        sizePolicy1.setHeightForWidth(pushButton_9->sizePolicy().hasHeightForWidth());
-        pushButton_9->setSizePolicy(sizePolicy1);
+        sizePolicy.setHeightForWidth(pushButton_9->sizePolicy().hasHeightForWidth());
+        pushButton_9->setSizePolicy(sizePolicy);
         pushButton_9->setMinimumSize(QSize(162, 0));
 
         verticalLayout->addWidget(pushButton_9);
 
         lineEdit = new QLineEdit(centralWidget);
         lineEdit->setObjectName(QString::fromUtf8("lineEdit"));
-        sizePolicy1.setHeightForWidth(lineEdit->sizePolicy().hasHeightForWidth());
-        lineEdit->setSizePolicy(sizePolicy1);
+        sizePolicy.setHeightForWidth(lineEdit->sizePolicy().hasHeightForWidth());
+        lineEdit->setSizePolicy(sizePolicy);
         lineEdit->setMinimumSize(QSize(162, 0));
 
         verticalLayout->addWidget(lineEdit);
 
         pushButton = new QPushButton(centralWidget);
         pushButton->setObjectName(QString::fromUtf8("pushButton"));
-        sizePolicy1.setHeightForWidth(pushButton->sizePolicy().hasHeightForWidth());
-        pushButton->setSizePolicy(sizePolicy1);
+        sizePolicy.setHeightForWidth(pushButton->sizePolicy().hasHeightForWidth());
+        pushButton->setSizePolicy(sizePolicy);
         pushButton->setMinimumSize(QSize(162, 0));
 
         verticalLayout->addWidget(pushButton);
@@ -123,39 +120,39 @@ public:
         gridLayout_2->setObjectName(QString::fromUtf8("gridLayout_2"));
         pushButton_5 = new QPushButton(centralWidget);
         pushButton_5->setObjectName(QString::fromUtf8("pushButton_5"));
-        QSizePolicy sizePolicy2(QSizePolicy::Expanding, QSizePolicy::Fixed);
-        sizePolicy2.setHorizontalStretch(0);
-        sizePolicy2.setVerticalStretch(0);
-        sizePolicy2.setHeightForWidth(pushButton_5->sizePolicy().hasHeightForWidth());
-        pushButton_5->setSizePolicy(sizePolicy2);
+        QSizePolicy sizePolicy1(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        sizePolicy1.setHorizontalStretch(0);
+        sizePolicy1.setVerticalStretch(0);
+        sizePolicy1.setHeightForWidth(pushButton_5->sizePolicy().hasHeightForWidth());
+        pushButton_5->setSizePolicy(sizePolicy1);
 
         gridLayout_2->addWidget(pushButton_5, 1, 2, 1, 1);
 
         pushButton_2 = new QPushButton(centralWidget);
         pushButton_2->setObjectName(QString::fromUtf8("pushButton_2"));
-        sizePolicy2.setHeightForWidth(pushButton_2->sizePolicy().hasHeightForWidth());
-        pushButton_2->setSizePolicy(sizePolicy2);
+        sizePolicy1.setHeightForWidth(pushButton_2->sizePolicy().hasHeightForWidth());
+        pushButton_2->setSizePolicy(sizePolicy1);
 
         gridLayout_2->addWidget(pushButton_2, 0, 1, 1, 1);
 
         pushButton_6 = new QPushButton(centralWidget);
         pushButton_6->setObjectName(QString::fromUtf8("pushButton_6"));
-        sizePolicy2.setHeightForWidth(pushButton_6->sizePolicy().hasHeightForWidth());
-        pushButton_6->setSizePolicy(sizePolicy2);
+        sizePolicy1.setHeightForWidth(pushButton_6->sizePolicy().hasHeightForWidth());
+        pushButton_6->setSizePolicy(sizePolicy1);
 
         gridLayout_2->addWidget(pushButton_6, 1, 0, 1, 1);
 
         pushButton_3 = new QPushButton(centralWidget);
         pushButton_3->setObjectName(QString::fromUtf8("pushButton_3"));
-        sizePolicy2.setHeightForWidth(pushButton_3->sizePolicy().hasHeightForWidth());
-        pushButton_3->setSizePolicy(sizePolicy2);
+        sizePolicy1.setHeightForWidth(pushButton_3->sizePolicy().hasHeightForWidth());
+        pushButton_3->setSizePolicy(sizePolicy1);
 
         gridLayout_2->addWidget(pushButton_3, 2, 1, 1, 1);
 
         pushButton_4 = new QPushButton(centralWidget);
         pushButton_4->setObjectName(QString::fromUtf8("pushButton_4"));
-        sizePolicy2.setHeightForWidth(pushButton_4->sizePolicy().hasHeightForWidth());
-        pushButton_4->setSizePolicy(sizePolicy2);
+        sizePolicy1.setHeightForWidth(pushButton_4->sizePolicy().hasHeightForWidth());
+        pushButton_4->setSizePolicy(sizePolicy1);
 
         gridLayout_2->addWidget(pushButton_4, 1, 1, 1, 1);
 
@@ -172,16 +169,16 @@ public:
         verticalLayout_2->setObjectName(QString::fromUtf8("verticalLayout_2"));
         pushButton_8 = new QPushButton(centralWidget);
         pushButton_8->setObjectName(QString::fromUtf8("pushButton_8"));
-        sizePolicy1.setHeightForWidth(pushButton_8->sizePolicy().hasHeightForWidth());
-        pushButton_8->setSizePolicy(sizePolicy1);
+        sizePolicy.setHeightForWidth(pushButton_8->sizePolicy().hasHeightForWidth());
+        pushButton_8->setSizePolicy(sizePolicy);
         pushButton_8->setMinimumSize(QSize(162, 0));
 
         verticalLayout_2->addWidget(pushButton_8);
 
         pushButton_7 = new QPushButton(centralWidget);
         pushButton_7->setObjectName(QString::fromUtf8("pushButton_7"));
-        sizePolicy1.setHeightForWidth(pushButton_7->sizePolicy().hasHeightForWidth());
-        pushButton_7->setSizePolicy(sizePolicy1);
+        sizePolicy.setHeightForWidth(pushButton_7->sizePolicy().hasHeightForWidth());
+        pushButton_7->setSizePolicy(sizePolicy);
         pushButton_7->setMinimumSize(QSize(162, 0));
 
         verticalLayout_2->addWidget(pushButton_7);
@@ -230,8 +227,8 @@ public:
 
         lineEdit_2 = new QLineEdit(centralWidget);
         lineEdit_2->setObjectName(QString::fromUtf8("lineEdit_2"));
-        sizePolicy1.setHeightForWidth(lineEdit_2->sizePolicy().hasHeightForWidth());
-        lineEdit_2->setSizePolicy(sizePolicy1);
+        sizePolicy.setHeightForWidth(lineEdit_2->sizePolicy().hasHeightForWidth());
+        lineEdit_2->setSizePolicy(sizePolicy);
         lineEdit_2->setFocusPolicy(Qt::NoFocus);
         lineEdit_2->setReadOnly(true);
 
@@ -239,8 +236,8 @@ public:
 
         lineEdit_3 = new QLineEdit(centralWidget);
         lineEdit_3->setObjectName(QString::fromUtf8("lineEdit_3"));
-        sizePolicy1.setHeightForWidth(lineEdit_3->sizePolicy().hasHeightForWidth());
-        lineEdit_3->setSizePolicy(sizePolicy1);
+        sizePolicy.setHeightForWidth(lineEdit_3->sizePolicy().hasHeightForWidth());
+        lineEdit_3->setSizePolicy(sizePolicy);
         lineEdit_3->setFocusPolicy(Qt::NoFocus);
         lineEdit_3->setReadOnly(true);
 
@@ -248,8 +245,8 @@ public:
 
         lineEdit_4 = new QLineEdit(centralWidget);
         lineEdit_4->setObjectName(QString::fromUtf8("lineEdit_4"));
-        sizePolicy1.setHeightForWidth(lineEdit_4->sizePolicy().hasHeightForWidth());
-        lineEdit_4->setSizePolicy(sizePolicy1);
+        sizePolicy.setHeightForWidth(lineEdit_4->sizePolicy().hasHeightForWidth());
+        lineEdit_4->setSizePolicy(sizePolicy);
         lineEdit_4->setFocusPolicy(Qt::NoFocus);
         lineEdit_4->setReadOnly(true);
 
