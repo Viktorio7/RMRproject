@@ -23,8 +23,8 @@ MainWindow::MainWindow(QWidget *parent) :
     datacounter=0;
     newErrorFi=0;
     previousErrorFi=0;
-    minOutputFi=-M_PI;
-    maxOutputFi=M_PI;
+    minOutputFi=-M_PI/6;
+    maxOutputFi=M_PI/6;
     //rangeFi=0.3490658504/2;
     rangeFi=degToRad(5);
 
@@ -32,7 +32,7 @@ MainWindow::MainWindow(QWidget *parent) :
     previousErrorDist=0;
     minOutputDist=-300;
     maxOutputDist=300;
-    rangeDist=0.325;
+    rangeDist=0.325/2;
     mapInit();
     cout<<"Setup complete"<<endl;
     for(int i=95-1;i>=0;i--){
@@ -489,26 +489,20 @@ void MainWindow::processThisLidar(LaserMeasurement &laserData)
         double lidarAngle=copyOfLaserData.Data[k].scanAngle;
         double lidarDistance=copyOfLaserData.Data[k].scanDistance;
         MatrixXd Txl1(3,3);
-        Txl1<<0,0,X*100,0,0,Y*100,0,0,1;
+        Txl1<<1,0,-X*100,0,1,Y*100,0,0,1;
         MatrixXd Rzl1(3,3);
-        Rzl1<<cos(degToRad(lidarAngle)+Fi),sin(degToRad(lidarAngle)+Fi),0,-sin(degToRad(lidarAngle)+Fi),cos(degToRad(lidarAngle)+Fi),0,0,0,1;
-        VectorXd Txl2(3);
-        Txl2<<lidarDistance,0,1;
+        Rzl1<<cos(degToRad(lidarAngle)+Fi+M_PI),sin(degToRad(lidarAngle)+Fi+M_PI),0,-sin(degToRad(lidarAngle)+Fi+M_PI),cos(degToRad(lidarAngle)+Fi+M_PI),0,0,0,1;
+        //VectorXd Txl2(3);
+        MatrixXd Txl2(3,3);
+        Txl2<<1,0,lidarDistance/10.0,0,1,0,0,0,1;
         VectorXd P(3);
-        P=Txl1*Rzl1*Txl2;
-        if(k==0){
-            cout<<lidarDistance<<" "<<lidarAngle<<endl;
-            cout<<"x: "<<P(0)<<" y: "<<P(1)<<endl;
-            Txl2<<0,0,1;
-            VectorXd P1(3);
-            P1=Txl1*Rzl1*Txl2;
-            cout<<"x: "<<P1(0)<<" y: "<<P1(1)<<endl;
-        }
+        P<<0,0,1;
+        P=Txl1*Rzl1*Txl2*P;
         for(int i=0;i<arraySize-1;i++){
             for(int j=0;j<arraySize-1;j++){
-                if(P(0)>=mapa[i][j].min[0]&&P(0)<=mapa[i][j].max[0]){
-                    if(P(1)>=mapa[i][j].min[1]&&P(1)<=mapa[i][j].max[1]){
-                        mapa[i][j].obstacle=true;
+                if(-P(0)>=mapa[j][i].min[0]&&-P(0)<=mapa[j][i].max[0]){
+                    if(P(1)>=mapa[j][i].min[1]&&P(1)<=mapa[j][i].max[1]){
+                        mapa[j][i].obstacle=true;
                     }
                 }
             }
@@ -579,7 +573,7 @@ void MainWindow::on_pushButton_3_clicked() //back
 void MainWindow::on_pushButton_6_clicked() //left
 {
 
-    std::vector<unsigned char> mess=robot.setRotationSpeed(M_PI/20);
+    std::vector<unsigned char> mess=robot.setRotationSpeed(M_PI/6);
     if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1)
     {
 
@@ -589,7 +583,7 @@ void MainWindow::on_pushButton_6_clicked() //left
 void MainWindow::on_pushButton_5_clicked()//right
 {
 
-    std::vector<unsigned char> mess=robot.setRotationSpeed(-M_PI/2);
+    std::vector<unsigned char> mess=robot.setRotationSpeed(-M_PI/6);
     if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1)
     {
 
