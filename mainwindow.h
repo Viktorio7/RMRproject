@@ -36,6 +36,7 @@ public:
     void odometry();
     void positioning();
     void mapInit();
+    void floodFill();
     void mapSet(double x, double y, double diffX, double diffY, int arraySize);
     double degToRad(double);
     double radToDeg(double);
@@ -111,6 +112,7 @@ private:
     long double distLeft, distRight;
     double X,Y,Fi,XOld,YOld,da;
     long counter;
+    bool mapChanged;
 
     double vectX,vectY;
     double previousErrorFi,newErrorFi,rangeFi;

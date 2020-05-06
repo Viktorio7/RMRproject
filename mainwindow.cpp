@@ -23,11 +23,10 @@ MainWindow::MainWindow(QWidget *parent) :
     datacounter=0;
     newErrorFi=0;
     previousErrorFi=0;
-    minOutputFi=-M_PI/6;
-    maxOutputFi=M_PI/6;
+    minOutputFi=-M_PI/2;
+    maxOutputFi=M_PI/2;
     //rangeFi=0.3490658504/2;
     rangeFi=degToRad(5);
-
     newErrorDist=0;
     previousErrorDist=0;
     minOutputDist=-300;
@@ -155,7 +154,7 @@ void MainWindow::mapInit(){
             cout<<"Kontrola ["<<mapa[(arraySize-1)/2][(arraySize-1)/2].min[0]<<", "<<mapa[(arraySize-1)/2][(arraySize-1)/2].min[1]\
                     <<"] ["<<mapa[(arraySize-1)/2][(arraySize-1)/2].max[0]<<", "<<mapa[(arraySize-1)/2][(arraySize-1)/2].max[1]<<"]"<<endl;
             cout<<"Kontrola ["<<mapa[(arraySize-1)][(arraySize-1)].min[0]<<", "<<mapa[(arraySize-1)][(arraySize-1)].min[0]<<"] ["\
-                    <<mapa[(arraySize-1)][(arraySize-1)].max[0]<<", "<<mapa[(arraySize-1)][(arraySize-1)].max[0]<<"]"<<endl;
+                                                                                                                         <<mapa[(arraySize-1)][(arraySize-1)].max[0]<<", "<<mapa[(arraySize-1)][(arraySize-1)].max[0]<<"]"<<endl;
         }
         for(int i=0;i<mapArea.wall.numofpoints-1;i++){
             double diffX=mapArea.wall.points.at(i+1).point.x-mapArea.wall.points.at(i).point.x;
@@ -293,21 +292,18 @@ void MainWindow::paintEvent(QPaintEvent *event)
     painter.drawLine(centerX+Pr0(0),centerY+Pr0(1),centerX+Pr1(0),centerY+Pr1(1));
     if(updateLaserPicture==1)
     {
-
         mutex.lock();//lock.. idem robit s premennou ktoru ine vlakno moze prepisovat...
         updateLaserPicture=0;
-
         painter.setPen(pero);
         ///teraz sa tu kreslia udaje z lidaru. ak chcete, prerobte
         for(int k=0;k<copyOfLaserData.numberOfScans;k++)
         {
-
             //tu sa rata z polarnych suradnic na kartezske, a zaroven sa upravuje mierka aby sme sa zmestili do
             //do vyhradeneho stvorca aspon castou merania.. ale nieje to pekne, krajsie by bolo
             //keby ste nastavovali mierku tak,aby bolo v okne zobrazene cele meranie (treba najst min a max pre x a y suradnicu a podla toho to prenasobit)
             int dist=copyOfLaserData.Data[k].scanDistance/24.8;
-            int xp=rect.width() -(/*rect.width()/2*/ -rect.x()+centerX-Pr0(0)+dist*2*sin((degToRad((-1)+copyOfLaserData.Data[k].scanAngle)+Fi-M_PI/2)))+rect.topLeft().x();
-            int yp=rect.height()-(/*rect.height()/2*/-rect.y()+centerY-Pr0(1)+dist*2*cos((degToRad((-1)+copyOfLaserData.Data[k].scanAngle)+Fi-M_PI/2)))+rect.topLeft().y();
+            int xp=rect.width() -(-rect.x()+centerX-Pr0(0)+dist*2*sin((degToRad((-1)+copyOfLaserData.Data[k].scanAngle)+Fi-M_PI/2)))+rect.topLeft().x();
+            int yp=rect.height()-(-rect.y()+centerY-Pr0(1)+dist*2*cos((degToRad((-1)+copyOfLaserData.Data[k].scanAngle)+Fi-M_PI/2)))+rect.topLeft().y();
             if(rect.contains(xp,yp))
                 painter.drawEllipse(QPoint(xp, yp),2,2);//vykreslime kruh s polomerom 2px
         }
@@ -485,7 +481,7 @@ void MainWindow::processThisLidar(LaserMeasurement &laserData)
     memcpy( &copyOfLaserData,&laserData,sizeof(LaserMeasurement));
     //tu mozete robit s datami z lidaru.. napriklad najst prekazky, zapisat do mapy. naplanovat ako sa prekazke vyhnut.
     // ale nic vypoctovo narocne - to iste vlakno ktore cita data z lidaru
-    for(int k=0;k<copyOfLaserData.numberOfScans;k++){
+    for(int k=0;k<copyOfLaserData.numberOfScans;k+=10){
         double lidarAngle=copyOfLaserData.Data[k].scanAngle;
         double lidarDistance=copyOfLaserData.Data[k].scanDistance;
         MatrixXd Txl1(3,3);
@@ -498,16 +494,42 @@ void MainWindow::processThisLidar(LaserMeasurement &laserData)
         VectorXd P(3);
         P<<0,0,1;
         P=Txl1*Rzl1*Txl2*P;
-        for(int i=0;i<arraySize-1;i++){
-            for(int j=0;j<arraySize-1;j++){
+        for(int i=1;i<arraySize-1;i++){
+            for(int j=1;j<arraySize-1;j++){
                 if(-P(0)>=mapa[j][i].min[0]&&-P(0)<=mapa[j][i].max[0]){
                     if(P(1)>=mapa[j][i].min[1]&&P(1)<=mapa[j][i].max[1]){
-                        mapa[j][i].obstacle=true;
+                        if(!mapa[j][i].obstacle){
+                            mapa[j][i].obstacle=true;
+                            if(!mapa[j-1][i].obstacle){
+                                if(!mapa[j][i-1].obstacle){
+                                    if(!mapa[j+1][i].obstacle){
+                                        if(!mapa[j][i+1].obstacle){
+                                            mapa[j][i].obstacle=false;
+                                            continue;
+                                        }
+                                    }
+                                }
+                            }
+                            floodFill();
+                        }
                     }
                 }
             }
         }
     }
+    /*for(int i=1;i<arraySize-1;i++){
+        for(int j=1;j<arraySize-1;j++){
+            if(!mapa[i-1][j].obstacle){
+                if(!mapa[i][j-1].obstacle){
+                    if(!mapa[i+1][j].obstacle){
+                        if(!mapa[i][j+1].obstacle){
+                            mapa[i][j].obstacle=false;
+                        }
+                    }
+                }
+            }
+        }
+    }*/
     updateLaserPicture=1;
     mutex.unlock();//skoncil som
     update();//tento prikaz je vlastne signal, ktory prinuti prekreslit obrazovku.. zavola sa paintEvent funkcia
@@ -516,6 +538,9 @@ void MainWindow::processThisLidar(LaserMeasurement &laserData)
 
 }
 
+void MainWindow::floodFill(){
+
+}
 
 void  MainWindow::setUiValues(double robotX,double robotY,double robotFi)
 {
@@ -546,6 +571,7 @@ void MainWindow::on_pushButton_10_clicked() // GoTo button
         destX=SetX.toDouble()/100.0;
         destY=SetY.toDouble()/100.0;
         finished=false;
+        floodFill();
     }
 }
 
@@ -583,7 +609,7 @@ void MainWindow::on_pushButton_6_clicked() //left
 void MainWindow::on_pushButton_5_clicked()//right
 {
 
-    std::vector<unsigned char> mess=robot.setRotationSpeed(-M_PI/6);
+    std::vector<unsigned char> mess=robot.setRotationSpeed(-M_PI/2);
     if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1)
     {
 
