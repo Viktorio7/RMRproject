@@ -86,12 +86,12 @@ private slots:
 private:
     typedef struct
     {
-        bool obstacle;
+        int obstacle;
         double min[2];
         double max[2];
 
-    }mapCoordiante;
-    mapCoordiante **mapa;
+    }mapCoordinate;
+    mapCoordinate **mapa;
     Ui::MainWindow *ui;
     void paintEvent(QPaintEvent *event);// Q_DECL_OVERRIDE;
     int updateLaserPicture;
@@ -107,8 +107,9 @@ private:
     int encoderOldL, encoderOldR;
     long overflowL,overflowR, encoderDeltaL, encoderDeltaR;
     double FiOld;
-    bool finished,rotationFinished;;
-    double destX, destY;
+    bool finished,rotationFinished;
+    vector<double> destX, destY;
+    //double destX, destY;
     long double distLeft, distRight;
     double X,Y,Fi,XOld,YOld,da;
     long counter;

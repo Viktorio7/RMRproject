@@ -23,15 +23,15 @@ MainWindow::MainWindow(QWidget *parent) :
     datacounter=0;
     newErrorFi=0;
     previousErrorFi=0;
-    minOutputFi=-M_PI/2;
-    maxOutputFi=M_PI/2;
+    minOutputFi=-M_PI/1;
+    maxOutputFi=M_PI/1;
     //rangeFi=0.3490658504/2;
-    rangeFi=degToRad(5);
+    rangeFi=degToRad(8);
     newErrorDist=0;
     previousErrorDist=0;
     minOutputDist=-300;
     maxOutputDist=300;
-    rangeDist=0.325/2;
+    rangeDist=0.0010;
     mapInit();
     cout<<"Setup complete"<<endl;
     for(int i=95-1;i>=0;i--){
@@ -44,6 +44,7 @@ MainWindow::MainWindow(QWidget *parent) :
         }
         cout<<endl;
     }
+    cout<<endl<<"Size of allocated memory: "<<95*95*sizeof(mapCoordinate)<<endl;
     Rzr1.resize(3,3);
     Txr1.resize(3,3);
     Pr.resize(3);
@@ -81,9 +82,9 @@ void MainWindow::mapInit(){
         int startCoordinate=-arraySize*5;
         int coordX=0;
         int coordY=0;
-        mapa=new mapCoordiante* [arraySize];
+        mapa=new mapCoordinate* [arraySize];
         for(int i=0;i<arraySize;i++){
-            mapa[i]=new mapCoordiante [arraySize];
+            mapa[i]=new mapCoordinate [arraySize];
             coordY=0;
             for(int j=0;j<arraySize;j++){
                 mapa[i][j].obstacle=false;
@@ -136,9 +137,9 @@ void MainWindow::mapInit(){
             int startCoordinate=-arraySize*5;
             int coordX=0;
             int coordY=0;
-            mapa=new mapCoordiante* [arraySize];
+            mapa=new mapCoordinate* [arraySize];
             for(int i=0;i<arraySize;i++){
-                mapa[i]=new mapCoordiante [arraySize];
+                mapa[i]=new mapCoordinate [arraySize];
                 coordY=0;
                 for(int j=0;j<arraySize;j++){
                     mapa[i][j].obstacle=false;
@@ -381,7 +382,7 @@ void MainWindow::odometry()
     XOld = X;
     YOld = Y;
 
-    if(Fi<-M_PI){
+    if(Fi<=-M_PI){
         FiOld=M_PI;
     }
     else if(Fi>M_PI){
@@ -396,60 +397,86 @@ void MainWindow::positioning()
 {
     if(counter%10==0){
         if(!finished){
-            vectX=destX-X;
-            vectY=destY-Y;
+            if(!destX.empty()){
+                vectX=destX.at(0)-X;
+                vectY=destY.at(0)+0.001-Y;
 
-            newErrorDist=sqrt(vectX*vectX+vectY*vectY);
-            if(newErrorDist>=-rangeDist&&newErrorDist<=rangeDist){
-                std::vector<unsigned char> mess=robot.setTranslationSpeed(0);
-                if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1){}
-                finished=true;
-            }
-
-            newErrorFi=(atan2(vectY,vectX)-Fi);
-            outputFi=10*newErrorFi;
-            if(!finished){
-                if(newErrorFi>=-rangeFi&&newErrorFi<=rangeFi){
-                    std::vector<unsigned char> mess=robot.setRotationSpeed(0);
-                    if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1){}
-                    rotationFinished=true;
-                }
-                else{
-                    if(outputFi<=minOutputFi){
-                        outputFi=minOutputFi;
-                    }
-                    if(outputFi>=maxOutputFi){
-                        outputFi=maxOutputFi;
-                    }
-                    std::vector<unsigned char> mess=robot.setRotationSpeed(outputFi);
-                    if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1){}
-                    rotationFinished=false;
-                }
-            }
-            if(rotationFinished){
-
-
-                outputDist=(int)ceil(1000.0*newErrorDist);
-                //if((X<=(-rangeDist-X) && X>=(rangeDist-X) ) && (Y<=(-rangeDist-Y) && Y>=(rangeDist-Y) ))
+                newErrorDist=sqrt(vectX*vectX+vectY*vectY);
                 if(newErrorDist>=-rangeDist&&newErrorDist<=rangeDist){
                     std::vector<unsigned char> mess=robot.setTranslationSpeed(0);
                     if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1){}
-                    finished=true;
-                }
-                else{
-                    if(outputDist<=minOutputDist){
-                        outputDist=minOutputDist;
+                    if(destX.empty()){
+                        cout<<"Pop_back X"<<endl;
+                        destX.pop_back();
+                        cout<<"Pop_back Y"<<endl;
+                        destY.pop_back();
+                        if(destX.empty()){
+                            cout<<"Finished"<<endl;
+                            finished=true;
+                        }
                     }
-                    if(outputDist>=maxOutputDist){
-                        outputDist=maxOutputDist;
-                    }
-                    std::vector<unsigned char> mess=robot.setTranslationSpeed(outputDist);
-                    if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1){}
                 }
+                double angle=atan2(vectY,vectX);
+                if(angle>=M_PI){
+                    angle=M_PI-degToRad(1);
+                }
+                if(angle<=-M_PI){
+                    angle=-M_PI+degToRad(1);
+                }
+                newErrorFi=(angle-Fi);
+                outputFi=10*newErrorFi;
+                if(!finished){
+                    if(newErrorFi>=-rangeFi&&newErrorFi<=rangeFi){
+                        std::vector<unsigned char> mess=robot.setRotationSpeed(0);
+                        if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1){}
+                        rotationFinished=true;
+                    } else {
+                        if(outputFi<=minOutputFi){
+                            outputFi=minOutputFi;
+                        }
+                        if(outputFi>=maxOutputFi){
+                            outputFi=maxOutputFi;
+                        }
+                        std::vector<unsigned char> mess=robot.setRotationSpeed(outputFi);
+                        if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1){}
+                        rotationFinished=false;
+                    }
+                }
+                if(rotationFinished){
+
+
+                    outputDist=2*(int)ceil(1000.0*newErrorDist);
+                    //if((X<=(-rangeDist-X) && X>=(rangeDist-X) ) && (Y<=(-rangeDist-Y) && Y>=(rangeDist-Y) ))
+                    if(newErrorDist>=-rangeDist&&newErrorDist<=rangeDist){
+                        std::vector<unsigned char> mess=robot.setTranslationSpeed(0);
+                        if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1){}
+                        if(destX.empty()){
+                            destX.erase(destX.begin());
+                            destY.erase(destY.begin());
+                            if(destX.empty()){
+                                finished=true;
+                            }
+                        }
+                    }
+                    else{
+                        if(outputDist<=minOutputDist){
+                            outputDist=minOutputDist;
+                        }
+                        if(outputDist>=maxOutputDist){
+                            outputDist=maxOutputDist;
+                        }
+                        std::vector<unsigned char> mess=robot.setTranslationSpeed(outputDist);
+                        if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1){}
+                    }
+                }
+            } else {
+                std::vector<unsigned char> mess=robot.setTranslationSpeed(0);
+                if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1){}
             }
         }
     }
 }
+
 
 void MainWindow::processThisRobot()
 {
@@ -481,7 +508,7 @@ void MainWindow::processThisLidar(LaserMeasurement &laserData)
     memcpy( &copyOfLaserData,&laserData,sizeof(LaserMeasurement));
     //tu mozete robit s datami z lidaru.. napriklad najst prekazky, zapisat do mapy. naplanovat ako sa prekazke vyhnut.
     // ale nic vypoctovo narocne - to iste vlakno ktore cita data z lidaru
-    for(int k=0;k<copyOfLaserData.numberOfScans;k+=10){
+    for(int k=0;k<copyOfLaserData.numberOfScans;k+=5){
         double lidarAngle=copyOfLaserData.Data[k].scanAngle;
         double lidarDistance=copyOfLaserData.Data[k].scanDistance;
         MatrixXd Txl1(3,3);
@@ -568,11 +595,19 @@ void MainWindow::on_pushButton_10_clicked() // GoTo button
     if((!ui->lineEdit_5->text().isEmpty())&&(!ui->lineEdit_6->text().isEmpty())){
         QString SetX=ui->lineEdit_5->text();
         QString SetY=ui->lineEdit_6->text();
-        destX=SetX.toDouble()/100.0;
-        destY=SetY.toDouble()/100.0;
+        destX.clear();
+        destY.clear();
+        destX.push_back(SetX.toDouble()/100.0);
+        destY.push_back(SetY.toDouble()/100.0);
         finished=false;
         floodFill();
     }
+    /*destX.push_back(-70);
+    destY.push_back(100);
+    destX.push_back(-60);
+    destY.push_back(280);
+    destX.push_back(100);
+    destY.push_back(250);*/
 }
 
 void MainWindow::on_pushButton_2_clicked() //forward
