@@ -33,6 +33,8 @@ MainWindow::MainWindow(QWidget *parent) :
     maxOutputDist=300;
     rangeDist=0.0010;
     mapInit();
+    destX.clear();
+    destY.clear();
     cout<<"Setup complete"<<endl;
     for(int i=95-1;i>=0;i--){
         for(int j=0;j<95;j++){
@@ -398,20 +400,22 @@ void MainWindow::positioning()
     if(counter%10==0){
         if(!finished){
             if(!destX.empty()){
-                vectX=destX.at(0)-X;
-                vectY=destY.at(0)+0.001-Y;
+                /*for(int i=destX.size()-1;i>=0;i--){
+                    cout<<"["<<destX.at(i)<<", "<<destY.at(i)<<"] ";
+                }
+                cout<<endl;*/
+
+                vectX=destX.at(destX.size()-1)-X;
+                vectY=destY.at(destY.size()-1)+0.001-Y;
 
                 newErrorDist=sqrt(vectX*vectX+vectY*vectY);
                 if(newErrorDist>=-rangeDist&&newErrorDist<=rangeDist){
                     std::vector<unsigned char> mess=robot.setTranslationSpeed(0);
                     if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1){}
-                    if(destX.empty()){
-                        cout<<"Pop_back X"<<endl;
+                    if(!destX.empty()){
                         destX.pop_back();
-                        cout<<"Pop_back Y"<<endl;
                         destY.pop_back();
                         if(destX.empty()){
-                            cout<<"Finished"<<endl;
                             finished=true;
                         }
                     }
@@ -448,7 +452,7 @@ void MainWindow::positioning()
                     outputDist=2*(int)ceil(1000.0*newErrorDist);
                     //if((X<=(-rangeDist-X) && X>=(rangeDist-X) ) && (Y<=(-rangeDist-Y) && Y>=(rangeDist-Y) ))
                     if(newErrorDist>=-rangeDist&&newErrorDist<=rangeDist){
-                        std::vector<unsigned char> mess=robot.setTranslationSpeed(0);
+                        /*std::vector<unsigned char> mess=robot.setTranslationSpeed(0);
                         if (sendto(rob_s, (char*)mess.data(), sizeof(char)*mess.size(), 0, (struct sockaddr*) &rob_si_posli, rob_slen) == -1){}
                         if(destX.empty()){
                             destX.erase(destX.begin());
@@ -456,7 +460,7 @@ void MainWindow::positioning()
                             if(destX.empty()){
                                 finished=true;
                             }
-                        }
+                        }*/
                     }
                     else{
                         if(outputDist<=minOutputDist){
@@ -597,17 +601,17 @@ void MainWindow::on_pushButton_10_clicked() // GoTo button
         QString SetY=ui->lineEdit_6->text();
         destX.clear();
         destY.clear();
-        destX.push_back(SetX.toDouble()/100.0);
-        destY.push_back(SetY.toDouble()/100.0);
+        destX.insert(destX.begin(),SetX.toDouble()/100.0);
+        destY.insert(destY.begin(),SetY.toDouble()/100.0);
         finished=false;
         floodFill();
     }
-    /*destX.push_back(-70);
-    destY.push_back(100);
-    destX.push_back(-60);
-    destY.push_back(280);
-    destX.push_back(100);
-    destY.push_back(250);*/
+    destX.insert(destX.begin(),-0.70);
+    destY.insert(destY.begin(),1.00);
+    destX.insert(destX.begin(),-0.60);
+    destY.insert(destY.begin(),2.80);
+    destX.insert(destX.begin(),1.00);
+    destY.insert(destY.begin(),2.50);
 }
 
 void MainWindow::on_pushButton_2_clicked() //forward
