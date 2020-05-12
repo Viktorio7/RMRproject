@@ -36,7 +36,8 @@ public:
     void odometry();
     void positioning();
     void mapInit();
-    void floodFill();
+    void floodFill(double robotPosX, double robotPosY, double destinationX, double destinationY);
+    void dilation();
     void mapSet(double x, double y, double diffX, double diffY, int arraySize);
     double degToRad(double);
     double radToDeg(double);
@@ -86,7 +87,9 @@ private slots:
 private:
     typedef struct
     {
-        int obstacle;
+        bool obstacle;
+        bool unreachable;
+        int number;
         double min[2];
         double max[2];
 
@@ -109,7 +112,7 @@ private:
     double FiOld;
     bool finished,rotationFinished;
     vector<double> destX, destY;
-    //double destX, destY;
+    double destinX, destinY;
     long double distLeft, distRight;
     double X,Y,Fi,XOld,YOld,da;
     long counter;

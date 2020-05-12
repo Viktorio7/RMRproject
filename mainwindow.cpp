@@ -23,26 +23,24 @@ MainWindow::MainWindow(QWidget *parent) :
     datacounter=0;
     newErrorFi=0;
     previousErrorFi=0;
-    minOutputFi=-M_PI/1;
-    maxOutputFi=M_PI/1;
+    minOutputFi=-M_PI/1.5;
+    maxOutputFi=M_PI/1.5;
     //rangeFi=0.3490658504/2;
     rangeFi=degToRad(8);
     newErrorDist=0;
     previousErrorDist=0;
     minOutputDist=-300;
     maxOutputDist=300;
-    rangeDist=0.0010;
+    rangeDist=0.050;
     mapInit();
+    destinX=0;
+    destinY=0;
     destX.clear();
     destY.clear();
     cout<<"Setup complete"<<endl;
     for(int i=95-1;i>=0;i--){
         for(int j=0;j<95;j++){
-            if(i==(95-1)/2&&j==(95-1)/2){
-                cout<<2;
-            } else {
-                cout<<mapa[j][i].obstacle;
-            }
+            cout<<mapa[j][i].obstacle;
         }
         cout<<endl;
     }
@@ -90,6 +88,8 @@ void MainWindow::mapInit(){
             coordY=0;
             for(int j=0;j<arraySize;j++){
                 mapa[i][j].obstacle=false;
+                mapa[i][j].unreachable=false;
+                mapa[i][j].number=0;
                 mapa[i][j].min[0]=startCoordinate+coordX;//x1
                 mapa[i][j].min[1]=startCoordinate+coordY;//y1
                 mapa[i][j].max[0]=mapa[i][j].min[0] + 10;//x2
@@ -258,13 +258,22 @@ void MainWindow::paintEvent(QPaintEvent *event)
     for(int i=arraySize-1;i>=0;i--){
         xOffset=0;
         for(int j=0;j<arraySize;j++){
-            if(mapa[j][i].obstacle){
+            if(mapa[j][i].obstacle==true){
+
                 painter.setBrush(Qt::black);
                 painter.drawRect(rect.x()+xOffset,rect.y()+yOffset,blockWidth,blockHeight);
-            } else if(j==(arraySize-1)/2&&i==(arraySize-1)/2){
+                //} else if(j==(arraySize-1)/2&&i==(arraySize-1)/2){
+                /*if(mapa[j][i].unreachable==true){
+                    painter.setBrush(Qt::darkGray);
+                    painter.drawRect(rect.x()+xOffset,rect.y()+yOffset,blockWidth,blockHeight);
+                } else{
+                    painter.setBrush(Qt::black);
+                    painter.drawRect(rect.x()+xOffset,rect.y()+yOffset,blockWidth,blockHeight);
+                }*/
+            }else if(mapa[j][i].number==2){
                 painter.setBrush(Qt::green);
                 painter.drawRect(rect.x()+xOffset,rect.y()+yOffset,blockWidth,blockHeight);
-            } else {
+            } else  if(mapa[j][i].obstacle==false){
                 painter.setBrush(Qt::white);
                 painter.drawRect(rect.x()+xOffset,rect.y()+yOffset,blockWidth,blockHeight);
             }
@@ -400,10 +409,10 @@ void MainWindow::positioning()
     if(counter%10==0){
         if(!finished){
             if(!destX.empty()){
-                /*for(int i=destX.size()-1;i>=0;i--){
+                for(int i=destX.size()-1;i>=0;i--){
                     cout<<"["<<destX.at(i)<<", "<<destY.at(i)<<"] ";
                 }
-                cout<<endl;*/
+                cout<<endl;
 
                 vectX=destX.at(destX.size()-1)-X;
                 vectY=destY.at(destY.size()-1)+0.001-Y;
@@ -512,7 +521,7 @@ void MainWindow::processThisLidar(LaserMeasurement &laserData)
     memcpy( &copyOfLaserData,&laserData,sizeof(LaserMeasurement));
     //tu mozete robit s datami z lidaru.. napriklad najst prekazky, zapisat do mapy. naplanovat ako sa prekazke vyhnut.
     // ale nic vypoctovo narocne - to iste vlakno ktore cita data z lidaru
-    for(int k=0;k<copyOfLaserData.numberOfScans;k+=5){
+    for(int k=0;k<copyOfLaserData.numberOfScans;k+=10){
         double lidarAngle=copyOfLaserData.Data[k].scanAngle;
         double lidarDistance=copyOfLaserData.Data[k].scanDistance;
         MatrixXd Txl1(3,3);
@@ -529,23 +538,29 @@ void MainWindow::processThisLidar(LaserMeasurement &laserData)
             for(int j=1;j<arraySize-1;j++){
                 if(-P(0)>=mapa[j][i].min[0]&&-P(0)<=mapa[j][i].max[0]){
                     if(P(1)>=mapa[j][i].min[1]&&P(1)<=mapa[j][i].max[1]){
-                        if(!mapa[j][i].obstacle){
-                            mapa[j][i].obstacle=true;
-                            if(!mapa[j-1][i].obstacle){
-                                if(!mapa[j][i-1].obstacle){
-                                    if(!mapa[j+1][i].obstacle){
-                                        if(!mapa[j][i+1].obstacle){
-                                            mapa[j][i].obstacle=false;
+                        if(mapa[j][i].obstacle==0){
+                            mapa[j][i].obstacle=1;
+                            if(mapa[j-1][i].obstacle==0){
+                                if(mapa[j][i-1].obstacle==0){
+                                    if(mapa[j+1][i].obstacle==0){
+                                        if(mapa[j][i+1].obstacle==0){
+                                            mapa[j][i].obstacle=0;
                                             continue;
                                         }
                                     }
                                 }
                             }
-                            floodFill();
+                            mapChanged=true;
                         }
                     }
                 }
             }
+        }
+        if(mapChanged){
+            /*if(!finished){
+                floodFill(X*100,Y*100,destinX,destinY);
+            }*/
+            mapChanged=false;
         }
     }
     /*for(int i=1;i<arraySize-1;i++){
@@ -569,8 +584,393 @@ void MainWindow::processThisLidar(LaserMeasurement &laserData)
 
 }
 
-void MainWindow::floodFill(){
+void MainWindow::dilation(){
+    for(int i=0;i<arraySize;i++){
+        for(int j=0;j<arraySize;j++){
+            if(mapa[j][i].unreachable){
+                mapa[j][i].unreachable=0;
+            }
+        }
+    }
+    for(int i=0;i<arraySize;i++){
+        for(int j=0;j<arraySize;j++){
+            if(mapa[j][i].obstacle==1){
+                if(j-1>=0&&i-1>=0){ //j-1, i-1
+                    if(mapa[j-1][i-1].obstacle==0){
+                        mapa[j-1][i-1].unreachable=1;
+                    }
+                }
 
+                if(i-1>=0){ //j, i-1
+                    if(mapa[j][i-1].obstacle==0){
+                        mapa[j][i-1].unreachable=1;
+                    }
+                }
+
+                if(j+1<=arraySize-1&&i-1>=0){ //j+1, i-1
+                    if(mapa[j+1][i-1].obstacle==0){
+                        mapa[j+1][i-1].unreachable=1;
+                    }
+                }
+
+                if(j-1>=0){ //j-1, i
+                    if(mapa[j-1][i].obstacle==0){
+                        mapa[j-1][i].unreachable=1;
+                    }
+                }
+
+                if(j+1<=arraySize-1){ //j+1, i
+                    if(mapa[j+1][i].obstacle==0){
+                        mapa[j+1][i].unreachable=1;
+                    }
+                }
+
+                if(j-1>=0&&i+1<=arraySize-1){ //j-1, i+1
+                    if(mapa[j-1][i+1].obstacle==0){
+                        mapa[j-1][i+1].unreachable=1;
+                    }
+                }
+
+                if(i+1<=arraySize-1){ //j, i+1
+                    if(mapa[j][i+1].obstacle==0){
+                        mapa[j][i+1].unreachable=1;
+                    }
+                }
+
+                if(j+1<=arraySize-1&&i+1<=arraySize-1){ //j+1, i+1
+                    if(mapa[j+1][i+1].obstacle==0){
+                        mapa[j+1][i+1].unreachable=1;
+                    }
+                }
+
+                if(j-2>=0&&i-2>=0){ //j-2, i-2
+                    if(mapa[j-2][i-2].obstacle==0){
+                        mapa[j-2][i-2].unreachable=1;
+                    }
+                }
+
+                if(j-1>=0&&i-2>=0){ //j-1, i-2
+                    if(mapa[j-1][i-2].obstacle==0){
+                        mapa[j-1][i-2].unreachable=1;
+                    }
+                }
+
+                if(i-2>=0){ //j, i-2
+                    if(mapa[j][i-2].obstacle==0){
+                        mapa[j][i-2].unreachable=1;
+                    }
+                }
+
+                if(j+1<=arraySize-1&&i-2>=0){ //j+1, i-2
+                    if(mapa[j+1][i-2].obstacle==0){
+                        mapa[j+1][i-2].unreachable=1;
+                    }
+                }
+
+                if(j+1<arraySize-1&&i-2>=0){ //j+2, i-2
+                    if(mapa[j+2][i-2].obstacle==0){
+                        mapa[j+2][i-2].unreachable=1;
+                    }
+                }
+
+                if(j-2>=0&&i-1>=0){ //j-2, i-1
+                    if(mapa[j-2][i-1].obstacle==0){
+                        mapa[j-2][i-1].unreachable=1;
+                    }
+                }
+
+                if(j+2<=arraySize-1&&i-1>=0){ //j+2, i-1
+                    if(mapa[j+2][i-1].obstacle==0){
+                        mapa[j+2][i-1].unreachable=1;
+                    }
+                }
+
+                if(j-2>=0){ //j-2, i
+                    if(mapa[j-2][i].obstacle==0){
+                        mapa[j-2][i].unreachable=1;
+                    }
+                }
+
+                if(j+2<=arraySize-1){ //j+2, i
+                    if(mapa[j+2][i].obstacle==0){
+                        mapa[j+2][i].unreachable=1;
+                    }
+                }
+
+                if(j-2>=0&&i+1<=arraySize-1){ //j-2, i+1
+                    if(mapa[j-2][i+1].obstacle==0){
+                        mapa[j-2][i+1].unreachable=1;
+                    }
+                }
+
+                if(j+2<=arraySize-1&&i+1<=arraySize-1){ //j+2, i+1
+                    if(mapa[j+2][i+1].obstacle==0){
+                        mapa[j+2][i+1].unreachable=1;
+                    }
+                }
+
+                if(j-2>=0&&i+2<=arraySize-1){ //j-2, i+2
+                    if(mapa[j-2][i+2].obstacle==0){
+                        mapa[j-2][i+2].unreachable=1;
+                    }
+                }
+
+                if(j-1>=0&&i+2<=arraySize-1){ //j-1, i+2
+                    if(mapa[j-1][i+2].obstacle==0){
+                        mapa[j-1][i+2].unreachable=1;
+                    }
+                }
+
+                if(i+2<=arraySize-1){ //j, i+2
+                    if(mapa[j][i+2].obstacle==0){
+                        mapa[j][i+2].unreachable=1;
+                    }
+                }
+
+                if(j+1<=arraySize-1&&i+2<=arraySize-1){ //j+1, i+2
+                    if(mapa[j+1][i+2].obstacle==0){
+                        mapa[j+1][i+2].unreachable=1;
+                    }
+                }
+
+                if(j+2<=arraySize-1&&i+2<=arraySize-1){ //j+2, i+2
+                    if(mapa[j+2][i+2].obstacle==0){
+                        mapa[j+2][i+2].unreachable=1;
+                    }
+                }
+            }
+        }
+    }
+}
+
+void MainWindow::floodFill(double robotPosX, double robotPosY, double destinationX, double destinationY){
+    //mutex.lock();
+    vector<double>tempX, tempY;
+    destX.clear();
+    destY.clear();
+    bool prepinac=true;
+    if(prepinac){
+        int start[2],finish[2];
+        for(int i=0;i<arraySize;i++){
+            for(int j=0;j<arraySize;j++){
+                /*if(mapa[j][i].unreachable==1){
+                mapa[j][i].unreachable=0;
+            }*/
+                    mapa[j][i].number=0;
+                if(robotPosX>=mapa[j][i].min[0]&&robotPosX<=mapa[j][i].max[0]){
+                    if(robotPosY>=mapa[j][i].min[1]&&robotPosY<=mapa[j][i].max[1]){
+                        start[0]=j;
+                        start[1]=i;
+                    }
+                }
+                if(destinationX>=mapa[j][i].min[0]&&destinationX<=mapa[j][i].max[0]){
+                    if(destinationY>=mapa[j][i].min[1]&&destinationY<=mapa[j][i].max[1]){
+                        finish[0]=j;
+                        finish[1]=i;
+                        mapa[j][i].number=2;
+                    }
+                }
+            }
+        }
+        dilation();
+        int testSamle=2;
+        int control=0;
+        while(mapa[start[0]][start[1]].number<=2&&control<=2*arraySize*arraySize){
+            for(int i=0;i<arraySize;i++){
+                for(int j=0;j<arraySize;j++){
+                    if(mapa[j][i].number==testSamle){
+                        if(j-1>=0&&i-1>=0){ //j-1, i-1
+                            if(mapa[j-1][i-1].number==0&&mapa[j-1][i-1].obstacle==0&&mapa[j-1][i-1].unreachable==0){
+                                mapa[j-1][i-1].number=testSamle+1;
+                            }
+                        }
+
+                        if(i-1>=0){ //j, i-1
+                            if(mapa[j][i-1].number==0&&mapa[j][i-1].obstacle==0&&mapa[j][i-1].unreachable==0){
+                                mapa[j][i-1].number=testSamle+1;
+                            }
+                        }
+
+                        if(j+1<=arraySize-1&&i-1>=0){ //j+1, i-1
+                            if(mapa[j+1][i-1].number==0&&mapa[j+1][i-1].obstacle==0&&mapa[j+1][i-1].unreachable==0){
+                                mapa[j+1][i-1].number=testSamle+1;
+                            }
+                        }
+
+                        if(j-1>=0){ //j-1, i
+                            if(mapa[j-1][i].number==0&&mapa[j-1][i].obstacle==0&&mapa[j-1][i].unreachable==0){
+                                mapa[j-1][i].number=testSamle+1;
+                            }
+                        }
+
+                        if(j+1<=arraySize-1){ //j+1, i
+                            if(mapa[j+1][i].number==0&&mapa[j+1][i].obstacle==0&&mapa[j+1][i].unreachable==0){
+                                mapa[j+1][i].number=testSamle+1;
+                            }
+                        }
+
+                        if(j-1>=0&&i+1<=arraySize-1){ //j-1, i+1
+                            if(mapa[j-1][i+1].number==0&&mapa[j-1][i+1].obstacle==0&&mapa[j-1][i+1].unreachable==0){
+                                mapa[j-1][i+1].number=testSamle+1;
+                            }
+                        }
+
+                        if(i+1<=arraySize-1){ //j, i+1
+                            if(mapa[j][i+1].number==0&&mapa[j][i+1].obstacle==0&&mapa[j][i+1].unreachable==0){
+                                mapa[j][i+1].number=testSamle+1;
+                            }
+                        }
+
+                        if(j+1<=arraySize-1&&i+1<=arraySize-1){ //j+1, i+1
+                            if(mapa[j+1][i+1].number==0&&mapa[j+1][i+1].obstacle==0&&mapa[j+1][i+1].unreachable==0){
+                                mapa[j+1][i+1].number=testSamle+1;
+                            }
+                        }
+                    }
+                }
+            }
+            testSamle++;
+            control++;
+        }
+        int indexI=start[1], indexJ=start[0];
+        control=0;
+        vector<int> direction;
+        while(control<=2*arraySize*arraySize){
+            if(indexI==finish[1]){
+                if(indexJ==finish[0]){
+                    break;
+                }
+            }
+            control++;
+            /*if(mapa[indexJ][indexI].unreachable==1){
+            indexI=indexI-1;
+            tempX.insert(tempX.begin(),(mapa[indexJ][indexI].min[0]+5)/100.0);
+            tempY.insert(tempY.begin(),(mapa[indexJ][indexI].min[1]+5)/100.0);
+            continue;
+        }*/
+            if(indexI-1>=0&&indexJ-1>=0&&indexI+1<=arraySize-1&&indexJ+1<=arraySize-1){
+                cout<<mapa[indexJ-1][indexI+1].number<<" "<<mapa[indexJ][indexI+1].number<<" "<<mapa[indexJ+1][indexI+1].number<<"\n"\
+                                                                                                                              <<mapa[indexJ-1][indexI].number<<" "<<mapa[indexJ][indexI].number<<" "<<mapa[indexJ+1][indexI].number<<"\n"\
+                                                                                                                             <<mapa[indexJ-1][indexI-1].number<<" "<<mapa[indexJ][indexI-1].number<<" "<<mapa[indexJ+1][indexI-1].number<<endl;
+            }
+            cout<<"Pathing i: "<<control;
+            if(indexJ+1>=arraySize-1){ //j+1, i
+                if(mapa[indexJ+1][indexI].number+1==mapa[indexJ][indexI].number){
+                    cout<<", right"<<endl;
+                    indexJ=indexJ+1;
+                    tempX.insert(tempX.begin(),(mapa[indexJ][indexI].min[0]+5)/100.0);
+                    tempY.insert(tempY.begin(),(mapa[indexJ][indexI].min[1]+5)/100.0);
+                    direction.insert(direction.begin(),1);
+                    continue;
+                }
+            }
+
+            if(indexI+1<=arraySize-1){ //j, i+1
+                if(mapa[indexJ][indexI+1].number+1==mapa[indexJ][indexI].number){
+                    cout<<", up"<<endl;
+                    indexI=indexI+1;
+                    tempX.insert(tempX.begin(),(mapa[indexJ][indexI].min[0]+5)/100.0);
+                    tempY.insert(tempY.begin(),(mapa[indexJ][indexI].min[1]+5)/100.0);
+                    direction.insert(direction.begin(),2);
+                    continue;
+                }
+            }
+
+            if(indexI-1>=0){ //j, i-1
+                if(mapa[indexJ][indexI-1].number+1==mapa[indexJ][indexI].number){
+                    cout<<", down"<<endl;
+                    indexI=indexI-1;
+                    tempX.insert(tempX.begin(),(mapa[indexJ][indexI].min[0]+5)/100.0);
+                    tempY.insert(tempY.begin(),(mapa[indexJ][indexI].min[1]+5)/100.0);
+                    direction.insert(direction.begin(),3);
+                    continue;
+                }
+            }
+
+            if(indexJ-1>=0&&indexI-1>=0){ //j-1, i-1
+                if(mapa[indexJ-1][indexI-1].number+1==mapa[indexJ][indexI].number){
+                    cout<<", left-down"<<endl;
+                    indexJ=indexJ-1;
+                    indexI=indexI-1;
+                    tempX.insert(tempX.begin(),(mapa[indexJ][indexI].min[0]+5)/100.0);
+                    tempY.insert(tempY.begin(),(mapa[indexJ][indexI].min[1]+5)/100.0);
+                    direction.insert(direction.begin(),4);
+                    continue;
+                }
+            }
+
+            if(indexJ+1<=arraySize-1&&indexI-1>=0){ //j+1, i-1
+                if(mapa[indexJ+1][indexI-1].number+1==mapa[indexJ][indexI].number){
+                    cout<<", right-down"<<endl;
+                    indexJ=indexJ+1;
+                    indexI=indexI-1;
+                    tempX.insert(tempX.begin(),(mapa[indexJ][indexI].min[0]+5)/100.0);
+                    tempY.insert(tempY.begin(),(mapa[indexJ][indexI].min[1]+5)/100.0);
+                    direction.insert(direction.begin(),5);
+                    continue;
+                }
+            }
+
+            if(indexJ-1>=0&&indexI+1<=arraySize-1){ //j-1, i+1
+                if(mapa[indexJ-1][indexI+1].number+1==mapa[indexJ][indexI].number){
+                    cout<<", left-up"<<endl;
+                    indexJ=indexJ-1;
+                    indexI=indexI+1;
+                    tempX.insert(tempX.begin(),(mapa[indexJ][indexI].min[0]+5)/100.0);
+                    tempY.insert(tempY.begin(),(mapa[indexJ][indexI].min[1]+5)/100.0);
+                    direction.insert(direction.begin(),6);
+                    continue;
+                }
+            }
+
+            if(indexJ+1<=arraySize-1&&indexI+1<=arraySize-1){ //j+1, i+1
+                if(mapa[indexJ+1][indexI+1].number+1==mapa[indexJ][indexI].number){
+                    cout<<", right-up"<<endl;
+                    indexJ=indexJ+1;
+                    indexI=indexI+1;
+                    tempX.insert(tempX.begin(),(mapa[indexJ][indexI].min[0]+5)/100.0);
+                    tempY.insert(tempY.begin(),(mapa[indexJ][indexI].min[1]+5)/100.0);
+                    direction.insert(direction.begin(),7);
+                    continue;
+                }
+            }
+
+            if(indexJ-1>=0){ //j-1, i
+                if(mapa[indexJ-1][indexI].number+1==mapa[indexJ][indexI].number){
+                    cout<<", left"<<endl;
+                    indexJ=indexJ-1;
+                    tempX.insert(tempX.begin(),(mapa[indexJ][indexI].min[0]+5)/100.0);
+                    tempY.insert(tempY.begin(),(mapa[indexJ][indexI].min[1]+5)/100.0);
+                    direction.insert(direction.begin(),8);
+                    continue;
+                }
+            }
+        }
+        if(control>=arraySize*arraySize){
+            cout<<"Destination not reached"<<endl;
+        }
+        cout<<"Destination points: "<<tempX.size()<<endl;
+        /*for(int i=0;i<tempX.size();i++){
+        cout<<"["<<tempX.at(i)<<", "<<tempY.at(i)<<"] ";
+    }
+    cout<<endl;*/
+        if(control<arraySize*arraySize){
+            for(int i=direction.size()-2;i>=0;i--){
+                if(direction.at(i)==direction.at(i+1)){
+                    cout<<"Mazem: "<<tempX.at(i+1)<<" "<<tempY.at(i+1)<<endl;
+                    tempX.erase(tempX.begin()+i+1);
+                    tempY.erase(tempY.begin()+i+1);
+                }
+            }
+        }
+    } else {
+        tempX.insert(tempX.begin(),destinationX/100.0);
+        tempY.insert(tempY.begin(),destinationY/100.0);
+    }
+    destX=tempX;
+    destY=tempY;
+    finished=false;
+    //mutex.unlock();
 }
 
 void  MainWindow::setUiValues(double robotX,double robotY,double robotFi)
@@ -596,22 +996,28 @@ void MainWindow::on_pushButton_10_clicked() // GoTo button
     destX= ui->lineEdit_5->text().toDouble(&ok);
     destY= ui->lineEdit_6->text().toDouble(&ok);
     finished=false;*/
+    mutex.lock();
     if((!ui->lineEdit_5->text().isEmpty())&&(!ui->lineEdit_6->text().isEmpty())){
         QString SetX=ui->lineEdit_5->text();
         QString SetY=ui->lineEdit_6->text();
-        destX.clear();
+        /*destX.clear();
         destY.clear();
         destX.insert(destX.begin(),SetX.toDouble()/100.0);
-        destY.insert(destY.begin(),SetY.toDouble()/100.0);
+        destY.insert(destY.begin(),SetY.toDouble()/100.0);*/
+        destinX=SetX.toDouble();
+        destinY=SetY.toDouble();
         finished=false;
-        floodFill();
+        double x=X*100, y=Y*100;
+        floodFill(x,y,destinX,destinY);
+        cout<<"x: "<<x<<", y: "<<y<<", destX: "<<destinX<<", desstY: "<<destinY<<endl;
     }
-    destX.insert(destX.begin(),-0.70);
+    mutex.unlock();
+    /*destX.insert(destX.begin(),-0.70);
     destY.insert(destY.begin(),1.00);
     destX.insert(destX.begin(),-0.60);
     destY.insert(destY.begin(),2.80);
     destX.insert(destX.begin(),1.00);
-    destY.insert(destY.begin(),2.50);
+    destY.insert(destY.begin(),2.50);*/
 }
 
 void MainWindow::on_pushButton_2_clicked() //forward
